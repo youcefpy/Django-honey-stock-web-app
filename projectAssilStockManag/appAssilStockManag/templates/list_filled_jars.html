@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+
+{% block title %}LISTE DES COFFRET REMPLI{% endblock  %}
+
+{% block content %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>Jar Size</th>
+            <th>Product Name</th>
+            <th>Quantity of Filled Jars</th>
+            <th>Date Filled</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for jar_info in filled_jars %}
+            <tr>
+                <td>{{ jar_info.jar.size }}</td>
+                <td>{{ jar_info.product.name_product }}</td>
+                <td>{{ jar_info.quantity_field }}</td>
+                <td>{{ jar_info.filled_date }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table> 
+
+{% endblock %}
+
+{% comment %} <table border="1">
+    <thead>
+        <tr>
+            <th>Jar Size</th>
+            <th>Product Name</th>
+            <th>Total Quantity of Filled Jars</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for jar_info in aggregated_jars %}
+            <tr>
+                <td>{{ jar_info.jar__size }}</td>
+                <td>{{ jar_info.product__name_product }}</td>
+                <td>{{ jar_info.total_jars }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table> {% endcomment %}

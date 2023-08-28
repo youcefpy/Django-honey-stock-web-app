@@ -1,0 +1,21 @@
+{% load widget_tweaks %}
+{% extends "base.html" %}
+{% block title %}
+    AJOUTER LES BOCALES
+{% endblock %}
+
+{% block content %}
+    <form method="POST" class="needs-validation" novalidate>
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field|add_class:"form-control" }}
+                <div class="invalid-feedback">
+                    {{ field.errors|striptags }}
+                </div>
+            </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary" >ADD BOX BATCH</button>
+    </form>
+{% endblock %}

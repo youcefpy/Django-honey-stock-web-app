@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %} LIST DES BOCALES {% endblock %}
+
+{% block content %}
+
+    <table class='table'>
+        <thead>
+            <tr>
+                <th>Size</th>
+                <th>Quantity in Stock</th>
+                <th>Price/Jar</th>
+                <th>History of Purchase/Batch</th>
+                <th>Delete Jar</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for jar in jars %}
+            <tr>
+                <td>{{ jar.get_size_display }}</td>
+                <td>{{ jar.quantity_in_the_stock  }}</td>
+                <td>{{ jar.weighted_average_price|floatformat:2 }}</td>
+                <td>
+                    <ul>
+                    {% for batch in jar.jarbatch_set.all %}
+                        <li>
+                            Date: {{ batch.date_received }},
+                            Quantity: {{ batch.quantity_received }},
+                            Price/Jar: {{ batch.price_jar }},
+                            <form action="{% url 'delete_jar_batch' batch.id %}" method="post" onsubmit="return confirmDeleteBatch();">
+                                {% csrf_token %}
+                                <button class='btn btn-warning'>Delete Batch</button>
+                            </form>  
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </td>
+                <td>
+                    <form action="{% url 'delete_jar' jar.id %}" method="post" onsubmit="return confirmDelete();">
+                        {% csrf_token %}
+                        <button class='btn btn-warning'>Delete Jar</button>
+                    </form> 
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
+
+
+<script>
+    function confirmDelete() {
+        return confirm("Do you really want to delete this jar and its batches?");
+    }
+    function confirmDeleteBatch() {
+        return confirm("Do you really want to delete this batch?");
+    }
+</script>
