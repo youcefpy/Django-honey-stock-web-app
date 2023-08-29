@@ -95,6 +95,31 @@ def add_jar_batch(request):
         form = JarBatchForm()
     return render(request,'add_jar_batch.html',{'form':form})
 
+@transaction.atomic
+def delete_jar_batch(request,batch_id):
+
+    batch = get_object_or_404(JarBatch, id=batch_id)
+    jar = batch.jar
+
+    total_cost_before = jar.weighted_average_price * jar.quantity_in_the_stock
+    cost_of_this_batch = batch.price_jar * batch.quantity_received
+
+    
+    jar.quantity_in_the_stock -= batch.quantity_received
+
+    
+    new_total_quantity = jar.quantity_in_the_stock
+    new_total_cost = total_cost_before - cost_of_this_batch
+    
+    if new_total_quantity > 0:
+        new_weighted_avg = new_total_cost / new_total_quantity
+    else:
+        new_weighted_avg = 0
+    
+    batch.delete()
+    jar.save()
+    return redirect('list_jars')
+    
 
 def add_filled_jar(request):
     error_message = None 
@@ -168,29 +193,6 @@ def delete_jar(request, jar_id):
         jar = get_object_or_404(Jar, id=jar_id)
         jar.delete()
         return redirect('list_jars')
-
-
-@transaction.atomic
-def delete_jar_batch(request, batch_id):
-    batch = get_object_or_404(JarBatch, id=batch_id)
-    jar = batch.jar
-
-    total_cost_before = jar.weighted_average_price * jar.quantity_in_the_stock
-    cost_of_this_batch = batch.price_jar * batch.quantity_received
-
-    jar.quantity_in_the_stock -= batch.quantity_received
-
-    new_total_jars = jar.quantity_in_the_stock
-    new_total_cost = total_cost_before - cost_of_this_batch
-
-    if new_total_jars > 0:
-        new_weighted_avg = new_total_cost / new_total_jars
-    else:
-        new_weighted_avg = 0
-
-    batch.delete()
-
-    return redirect('list_jars')
 
 
 
@@ -348,3 +350,56 @@ def add_fill_box(request):
 def list_filled_boxes(request):
     filled_boxes = FilledBox.objects.all()
     return render(request, 'list_filled_boxes.html', {'filled_boxes': filled_boxes})
+
+
+def main(request):
+    products = HoneyProduct.objects.all()
+    jars = Jar.objects.all()
+    filledJars = FilledJar.objects.all()
+    boxes = Box.objects.all()
+    boxesFilled = FilledBox.objects.all()
+    tickets = Ticket.objects.all()
+
+    #extraction the name and th quantity of the product 
+    product_name= [product.name_product for product in products]
+    product_quantity = [product.quantity_in_the_stock for product in products]
+
+    #extraction os the quantity and the size of the size 
+    jar_size = [jar.size for jar in jars]
+    jar_quantity = [jar.quantity_in_the_stock for jar in jars]
+
+    #extraction os the quantity and the size of the size 
+    ticket_type = [ticket.type_ticket for ticket in tickets ]
+    ticket_quantity = [ticket.quantity_in_the_stock for ticket in tickets]
+
+    #extraction of the quantity and the name and the size of the filled_jars
+    fill_jar_size = [fillJar.jar.size for fillJar in filledJars]
+    prod_name = [filledJar.product.name_product for filledJar in filledJars]
+    prod_quantity = [filledJar.quantity_field for filledJar in filledJars]
+    
+    #extraction of the quantity and the type of the box 
+    box_type = [box.type_box for box in boxes]
+    box_quantity = [box.quantity_in_stock for box in boxes]
+
+    #extraction of the quantity and the type of filled box 
+    fill_box_type = [boxFilled.box_type for boxFilled in boxesFilled ]
+    fill_box_quantity = [boxFilled.quantity for boxFilled in boxesFilled]
+
+    context = {
+        'product_names': product_name,
+        'product_quantities': product_quantity,
+        'jar_size' : jar_size,
+        'jar_quantity':jar_quantity,
+        'fill_jar_size' : fill_jar_size,
+        'prod_name':prod_name,
+        'prod_quantity':prod_quantity,
+        'box_type':box_type,
+        'box_quantity':box_quantity,
+        'fill_box_type':fill_box_type,
+        'fill_box_quantity':fill_box_quantity,
+        'ticket_type':ticket_type,
+        'ticket_quantity':ticket_quantity,
+
+    }
+    return render(request,'main.html',context)
+

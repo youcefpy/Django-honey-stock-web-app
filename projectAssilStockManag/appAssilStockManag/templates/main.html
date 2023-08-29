@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}ACCEUIL{% endblock %}
+
+{% block content %}
+
+    <canvas id="honeyProductChart" width="400" height="200"></canvas>
+    <canvas id ='JarChart'></canvas>
+    
+    {{ product_names|json_script:"product_names" }}
+    {{ product_quantities|json_script:"product_quantities" }}
+    {{ jar_size|json_script:"jar_size" }}
+    {{ jar_quantity|json_script:"jar_quantity" }}
+
+
+    <script>
+        function getColorBar(quantities){
+            return quantities.map(quantity =>{
+                if(quantity<30){
+                    return 'red';
+                }
+                else if (quantity>=30 && quantity<=50){
+                    return 'orange';
+                }else {
+                    return 'green'
+                }
+            });
+        }
+
+
+    </script>
+
+    <!-- graph bar of honey product -->
+    <script>
+        var product_names = JSON.parse(document.getElementById('product_names').textContent);
+        var product_quantities = JSON.parse(document.getElementById('product_quantities').textContent);
+        var ColorProdBar = getColorBar(product_quantities);
+        var ctx = document.getElementById('honeyProductChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: product_names,
+                datasets: [{
+                    label: 'Quantitier du miel dans le stock',
+                    data: product_quantities,
+                    backgroundColor: ColorProdBar,  // for customization
+                    borderColor: 'rgba(75, 192, 192, 1)',        // for customization
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+    <!-- graph bar of jars -->
+    <script>
+        var jar_size = JSON.parse(document.getElementById('jar_size').textContent);
+        var jar_quantity = JSON.parse(document.getElementById('jar_quantity').textContent);
+        var ColorJar = getColorBar(jar_quantity);
+        var ctx = document.getElementById('JarChart').getContext('2d');
+        var myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: jar_size,
+                datasets: [{
+                    label: 'Quantitier Des POTS DANS LE STOCK',
+                    data: jar_quantity,
+                    backgroundColor: ColorJar,  // for customization
+                    borderColor: 'rgba(75, 192, 192, 1)',        // for customization
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+
+
+    
+{% endblock %}

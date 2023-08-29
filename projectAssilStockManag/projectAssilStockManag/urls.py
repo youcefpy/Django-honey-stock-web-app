@@ -1,10 +1,11 @@
 from django.contrib import admin
 from django.urls import path
 from appAssilStockManag.views import add_honey_product, add_product_batch,list_products
-from appAssilStockManag.views import delete_product, delete_batch,add_jar,add_jar_batch,add_filled_jar,list_jars,list_jars_filled,delete_jar,delete_jar_batch,add_ticket
-from appAssilStockManag.views import list_tickets,add_batch_ticket,delete_ticket_batch,delete_ticket, add_box,add_box_batch,list_box,delete_box,delete_box_batch,add_fill_box,list_filled_boxes
+from appAssilStockManag.views import delete_product, delete_batch,add_jar,add_jar_batch,add_filled_jar,list_jars,list_jars_filled,delete_jar,delete_jar_batch,add_ticket,delete_jar_batch
+from appAssilStockManag.views import list_tickets,add_batch_ticket,delete_ticket_batch,delete_ticket, add_box,add_box_batch,list_box,delete_box,delete_box_batch,add_fill_box,list_filled_boxes,main
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('',main,name='main'),
     path('add_product/', add_honey_product, name='add_honey_product'),
     path('add_product_batch/', add_product_batch, name='add_product_batch'),
     path('list_products/',list_products, name='list_products'),
@@ -16,7 +17,7 @@ urlpatterns = [
     path('list_jar/',list_jars,name="list_jars"),
     path("list_filled_jars/", list_jars_filled, name="list_filled_jars"),
     path('delete_jar/<int:jar_id>',delete_jar,name="delete_jar"),
-    path('delete_jar_batch/<int:batch_id>',delete_jar_batch,name="delete_jar_batch"),
+    path('delete_jar_batch/<int:batch_id>/',delete_jar_batch,name='delete_jar_batch'),
     path('add_ticket/',add_ticket,name='add_ticket'),
     path('add_batch_ticket/',add_batch_ticket,name='add_batch_ticket'),
     path('list_tickets/',list_tickets,name='list_tickets'),

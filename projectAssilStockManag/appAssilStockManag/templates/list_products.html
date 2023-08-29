@@ -29,7 +29,7 @@
                             Price: {{ batch.price_per_kg }} , 
                             <form action="{% url 'delete_batch' batch.id %}" method="post" onsubmit= "return confirmDeleteBatch();">
                                 {% csrf_token %}
-                                <button class='btn btn-warning'>Supprimer l'arrivage</button>
+                                <button class='btn btn-danger'>Supprimer l'arrivage</button>
 
                             </form>
                         </li>
