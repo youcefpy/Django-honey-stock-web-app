@@ -51,7 +51,7 @@ class FilledJarForm(forms.ModelForm):
 class TicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
-        fields = ['type_ticket']
+        fields = ['type_ticket','product']
 
 class TicketBatchForm(forms.ModelForm) :
     class Meta:

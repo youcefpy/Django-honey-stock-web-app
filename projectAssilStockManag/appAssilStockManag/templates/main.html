@@ -6,23 +6,42 @@
 
     <canvas id="honeyProductChart" width="400" height="200"></canvas>
     <canvas id ='JarChart'></canvas>
-    
+    <canvas id = 'ticketChart' width='400' height='200'></canvas>
+    <canvas id='filledJarsChart' width='400',height='200'></canvas>
+    <canvas id = 'boxTypeChart' width='400' height='200'></canvas>
+    <canvas id='filledBoxChart' width="400" height="200"></canvas>
+
     {{ product_names|json_script:"product_names" }}
     {{ product_quantities|json_script:"product_quantities" }}
+
     {{ jar_size|json_script:"jar_size" }}
     {{ jar_quantity|json_script:"jar_quantity" }}
+
+    {{ ticket_type|json_script:"ticket_type" }}
+    {{ticket_quantity|json_script:"ticket_quantity"}}
+
+    {% comment %} {{ fill_jar_size|json_script:"fill_jar_size" }}
+    {{ prod_name|json_script:"prod_name" }} {% endcomment %}
+    {{ prod_with_jar|json_script:"prod_with_jar" }}
+    {{ prod_quantity|json_script:"prod_quantity" }}
+
+    {{ box_type|json_script:"box_type" }}
+    {{ box_quantity|json_script:"box_quantity" }}
+
+    {{ fill_box_type|json_script:"fill_box_type" }}
+    {{ fill_box_quantity|json_script:"fill_box_quantity" }}
 
 
     <script>
         function getColorBar(quantities){
             return quantities.map(quantity =>{
                 if(quantity<30){
-                    return 'red';
+                    return 'rgba(255,0,0,0.4)';
                 }
                 else if (quantity>=30 && quantity<=50){
-                    return 'orange';
+                    return 'rgba(255,128,64,0.2)';
                 }else {
-                    return 'green'
+                    return 'rgba(128,255,0,0.2)';
                 }
             });
         }
@@ -83,6 +102,131 @@
                 }
             }
         });
+    </script>
+
+    {% comment %} graphe bar for the tickets {% endcomment %}
+
+    <script>
+        var ticket_type = JSON.parse(document.getElementById('ticket_type').textContent);
+        var ticket_quantity = JSON.parse(document.getElementById('ticket_quantity').textContent);
+        var colorTicket = getColorBar(ticket_quantity);
+        var ctx = document.getElementById('ticketChart').getContext('2d');
+        var myChart = new Chart(ctx,{
+            type:'bar',
+            data:{
+                labels: ticket_type,
+                datasets:[{
+                    label: 'Quantitier Etiquette dans le stoque',
+                    data:ticket_quantity,
+                    backgroundColor:colorTicket,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1,
+                }],
+            },
+            options:{
+                scales:{
+                    y:{
+                        beginAtZero: true,
+                    }
+                }
+            }
+        });
+
+    </script>
+
+    {% comment %} filled jar by the honey chart {% endcomment %}
+    <script>
+        {% comment %} var fill_jar_size=JSON.parse(document.getElementById("fill_jar_size").textContent);
+        var prod_name = JSON.parse(document.getElementById("prod_name").textContent); {% endcomment %}
+        var prod_with_jar = JSON.parse(document.getElementById("prod_with_jar").textContent);
+        var prod_quantity = JSON.parse(document.getElementById("prod_quantity").textContent);
+        var ctx = document.getElementById('filledJarsChart').getContext('2d');
+        var colBarFillJar = getColorBar(prod_quantity)
+        
+        var myChart = new Chart(ctx,{
+            type:'bar',
+            data:{
+                labels: prod_with_jar,
+                datasets:[{
+                    label: 'qauntiter des pots rempli dans le stock',
+                    data: prod_quantity,
+                    backgroundColor:colBarFillJar,
+                    borderColor:'rgba(75, 192, 192, 1)',
+                    borderWidth:1,
+                }],
+            },
+            options:{
+                scales:{
+                    y:{
+                        beginAtZero:true,
+                    }
+                }
+            }
+           
+        });
+        
+
+    </script>
+    {% comment %} Box Chart  {% endcomment %}
+    <script>
+        var box_type = JSON.parse(document.getElementById('box_type').textContent);
+        var box_quantity = JSON.parse(document.getElementById('box_quantity').textContent);
+        var ctx= document.getElementById('boxTypeChart').getContext('2d');
+        var colorBarBox= getColorBar(box_quantity);
+
+        var nyChart = new Chart(ctx, {
+            type:'bar',
+            data:{
+                labels: box_type,
+                datasets:[{
+                    label: 'qauntiter des Coffet vide dans le stock',
+                    data: box_quantity,
+                    backgroundColor:colorBarBox,
+                    borderColor:'rgba(75, 192, 192, 1)',
+                    borderWidth:1,
+
+                }]
+            },
+            options:{
+                scales:{
+                    y:{
+                        beginAtZero:true,
+                    }
+                }
+            }
+        });
+
+
+    </script>
+
+    {% comment %} Box Filled Chart {% endcomment %}
+    <script>
+        var fill_box_type = JSON.parse(document.getElementById("fill_box_type").textContent);
+        var fill_box_quantity = JSON.parse(document.getElementById("fill_box_quantity").textContent);
+        var colorBarBoxFilled = getColorBar(fill_box_quantity);
+        var ctx = document.getElementById('filledBoxChart').getContext('2d');
+        var myChart = new Chart(ctx,{
+            type:"bar",
+            data:{
+                labels:fill_box_type,
+                datasets:[{
+                    label:'Quantitier des Coffet remplit dans le stock',
+                    data:fill_box_quantity,
+                    backgroundColor:colorBarBoxFilled,
+                    borderColor:'rgba(75, 192, 192, 1)',
+                    borderWidth:1,
+
+                }],
+            },
+            options:{
+                scales:{
+                    y:{
+                        beginAtZero:true,
+                    }
+                }
+            }
+        });
+
     </script>
 
 

@@ -4,7 +4,7 @@
 
 {% block content %}
 
-    <table class='table'>
+    <table class='table table-bordered'>
         <thead>
             <tr>
                 <th>Name Product</th>
@@ -39,7 +39,7 @@
                 <td>
                     <form action="{% url 'delete_product' product.id %}" method="post" onsubmit="return confirmDelete();">
                         {% csrf_token %}
-                        <button class='btn btn-warning'>Supprimer le produit</button>
+                        <button class='btn btn-danger'>Supprimer le produit</button>
 
                     </form>
                 </td>

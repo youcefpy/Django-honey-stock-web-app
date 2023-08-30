@@ -117,8 +117,9 @@ class FilledJar(models.Model):
 
             # Manage ticket stock
             ticket_type = f'{int(self.jar.size * 1000)}g' 
+            ticket_name = self.product.name_product
             try:
-                ticket = Ticket.objects.get(type_ticket=ticket_type)
+                ticket = Ticket.objects.get(type_ticket=ticket_type,product__name_product=ticket_name)
             except Ticket.DoesNotExist:
                 raise ValueError(f"No ticket found for type: {ticket_type}")
 
@@ -152,7 +153,7 @@ class Ticket(models.Model):
     type_ticket = models.CharField(max_length=50,choices=TYPE_CHOICES)
     quantity_in_the_stock = models.IntegerField(default=0)
     date_entry = models.DateField(auto_now_add=True)
-
+    product = models.ForeignKey(HoneyProduct, on_delete=models.CASCADE)
     @property
     def weighted_average(self):
         total_coast = sum([batch.quantity_received * batch.purchase_price for batch in self.ticketbatch_set.all()])
@@ -163,7 +164,7 @@ class Ticket(models.Model):
         return total_coast / total_quantity
 
     def __str__(self):
-        return f"{self.type_ticket}"
+        return f"{self.product.name_product} {self.type_ticket}"
 
 class TicketBatch(models.Model):
     ticket = models.ForeignKey(Ticket,on_delete=models.CASCADE)

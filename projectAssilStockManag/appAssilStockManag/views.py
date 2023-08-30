@@ -6,6 +6,7 @@ from .forms import HoneyProductForm, ProductBatchForm,JarForm, JarBatchForm, Fil
 from django.db.models import Sum
 from .constants import BOX_CONFIG
 from django.db import IntegrityError
+from django.http import JsonResponse
 
 def add_honey_product(request):
     if request.method == "POST":
@@ -369,12 +370,13 @@ def main(request):
     jar_quantity = [jar.quantity_in_the_stock for jar in jars]
 
     #extraction os the quantity and the size of the size 
-    ticket_type = [ticket.type_ticket for ticket in tickets ]
+    ticket_type_prod = [f"{ticket.product.name_product} ({ticket.type_ticket})" for ticket in tickets]
     ticket_quantity = [ticket.quantity_in_the_stock for ticket in tickets]
 
     #extraction of the quantity and the name and the size of the filled_jars
-    fill_jar_size = [fillJar.jar.size for fillJar in filledJars]
-    prod_name = [filledJar.product.name_product for filledJar in filledJars]
+    prod_with_jar =[f"{filledJar.product.name_product} ({filledJar.jar.size})" for filledJar in filledJars] 
+    # fill_jar_size = [fillJar.jar.size for fillJar in filledJars]
+    # prod_name = [filledJar.product.name_product for filledJar in filledJars]
     prod_quantity = [filledJar.quantity_field for filledJar in filledJars]
     
     #extraction of the quantity and the type of the box 
@@ -390,16 +392,22 @@ def main(request):
         'product_quantities': product_quantity,
         'jar_size' : jar_size,
         'jar_quantity':jar_quantity,
-        'fill_jar_size' : fill_jar_size,
-        'prod_name':prod_name,
+        # 'fill_jar_size' : fill_jar_size,
+        # 'prod_name':prod_name,
+        'prod_with_jar':prod_with_jar,
         'prod_quantity':prod_quantity,
         'box_type':box_type,
         'box_quantity':box_quantity,
         'fill_box_type':fill_box_type,
         'fill_box_quantity':fill_box_quantity,
-        'ticket_type':ticket_type,
+        'ticket_type':ticket_type_prod,
         'ticket_quantity':ticket_quantity,
 
     }
     return render(request,'main.html',context)
 
+
+def get_box_config(request):
+    box_type = request.GET.get('box_type')
+    config = BOX_CONFIG.get(box_type,{})
+    return JsonResponse(config,safe=False)

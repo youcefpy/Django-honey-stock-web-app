@@ -29,7 +29,7 @@
                             Price/Jar: {{ batch.price_jar }},
                             <form action="{% url 'delete_jar_batch' batch.id %}" method="post" onsubmit="return confirmDeleteBatch();">
                                 {% csrf_token %}
-                                <button class='btn btn-warning'>Delete Batch</button>
+                                <button class='btn btn-danger'>Delete Batch</button>
                             </form>  
                         </li>
                     {% endfor %}
@@ -38,7 +38,7 @@
                 <td>
                     <form action="{% url 'delete_jar' jar.id %}" method="post" onsubmit="return confirmDelete();">
                         {% csrf_token %}
-                        <button class='btn btn-warning'>Delete Jar</button>
+                        <button class='btn btn-danger'>Delete Jar</button>
                     </form> 
                 </td>
             </tr>

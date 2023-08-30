@@ -21,7 +21,7 @@ class FilledJarAdmin(admin.ModelAdmin):
     list_display = ('jar','product','quantity_field','filled_date')
 
 class TicketAdmin(admin.ModelAdmin):
-    list_display = ('type_ticket', 'quantity_in_the_stock', 'date_entry')
+    list_display = ('type_ticket','product', 'quantity_in_the_stock', 'date_entry')
     list_filter = ('type_ticket',)
     search_fields = ('type_ticket',)
 

@@ -30,7 +30,7 @@
                             Price/Coffret: {{ batch.purchase_price }},
                             <form action="{% url 'delete_box_batch' batch.id %}" method="post" onsubmit="return confirmDeleteBatch();">
                                 {% csrf_token %}
-                                <button class='btn btn-warning'>Delete Batch</button>
+                                <button class='btn btn-danger'>Delete Batch</button>
                             </form>  
                         </li>
                     {% endfor %}
@@ -39,7 +39,7 @@
                 <td>
                     <form action="{% url 'delete_box' box.id %}" method="post" onsubmit="return confirmDelete();">
                         {% csrf_token %}
-                        <button class='btn btn-warning'>Delete Box</button>
+                        <button class='btn btn-danger'>Delete Box</button>
                     </form> 
                 </td>
             </tr>
