@@ -29,5 +29,5 @@ urlpatterns = [
     path('delete_box/<int:box_id>',delete_box,name='delete_box'),
     path('delete_box_batch/<int:batch_id>',delete_box_batch,name='delete_box_batch'),
     path('add_fill_box/',add_fill_box,name='add_fill_box'),
-    path('list_filled_boxes/', list_filled_boxes, name='list_filled_boxes'),     
+    path('list_filled_boxes/', list_filled_boxes, name='list_filled_boxes'),  
 ]

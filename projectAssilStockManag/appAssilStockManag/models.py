@@ -238,13 +238,16 @@ class FilledBox(models.Model):
     box_type = models.ForeignKey(Box, on_delete=models.CASCADE)
     filled_jars = models.ManyToManyField(FilledJar, through='FilledBoxJars')
     fill_date = models.DateField(auto_now_add=True)
-    quantity = models.PositiveIntegerField(default=0)
+    quantity_fill_box = models.PositiveIntegerField(default=0)
 
     @transaction.atomic
     def fill(self, filled_jars_data, box_quantity):
         # Deduct jars from the FilledJar model and associate with FilledBox
         for product_name, jar_size, total_jars_needed in filled_jars_data:
-            filled_jar = FilledJar.objects.get(jar__size=jar_size, product__name_product=product_name)
+            try:
+                filled_jar = FilledJar.objects.get(jar__size=jar_size, product__name_product=product_name)
+            except FilledJar.DoesNotExist:
+                raise ValueError(f"No {product_name} jars of size {jar_size} KG in stock.")
             if filled_jar.quantity_field < total_jars_needed:
                 raise ValueError(f"Not enough {product_name} jars of size {jar_size} KG in stock to fill the boxes.")
             filled_jar.quantity_field -= total_jars_needed
@@ -254,12 +257,15 @@ class FilledBox(models.Model):
             # Using the ManyToMany relationship through the intermediary model
             filled_box_jar = FilledBoxJars(box=self, jar=filled_jar, quantity=total_jars_needed)
             filled_box_jar.save()
-
+            
+        print("Box quantity:", box_quantity)
         self.box_type.quantity_in_stock -= box_quantity
         self.box_type.save()
-        self.quantity += box_quantity
+        print("Quantity before update:", self.quantity_fill_box)
+        # self.quantity_fill_box += box_quantity        
         self.save()
-
+        print("Quantity after update:", self.quantity_fill_box)
+        
 
     def __str__(self):
         return f"{self.box_type}"

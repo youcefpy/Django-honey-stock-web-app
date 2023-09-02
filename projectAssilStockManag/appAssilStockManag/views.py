@@ -6,8 +6,7 @@ from .forms import HoneyProductForm, ProductBatchForm,JarForm, JarBatchForm, Fil
 from django.db.models import Sum
 from .constants import BOX_CONFIG
 from django.db import IntegrityError
-from django.http import JsonResponse
-
+from django.contrib import messages
 def add_honey_product(request):
     if request.method == "POST":
         form=HoneyProductForm(request.POST)
@@ -120,11 +119,8 @@ def delete_jar_batch(request,batch_id):
     batch.delete()
     jar.save()
     return redirect('list_jars')
-    
-
+ 
 def add_filled_jar(request):
-    error_message = None 
-
     if request.method == "POST":
         form = FilledJarForm(request.POST)
 
@@ -140,8 +136,9 @@ def add_filled_jar(request):
                 try:
                     filled_jar.save(update_stock=True)
                 except ValueError as e:
-                    error_message = str(e)
-                    return render(request, 'add_filled_jar.html', {'form': form, 'error_message': error_message})
+                    messages.error(request, str(e))
+                    return render(request, 'add_filled_jar.html', {'form': form})
+                
                 # Fetch the object from the database again and print
                 updated_filled_jar = FilledJar.objects.get(id=filled_jar.id)
                 print(f"Updated object from DB: {updated_filled_jar.quantity_field}")
@@ -155,23 +152,21 @@ def add_filled_jar(request):
                 )
                 try:
                     filled_jar.save(update_stock=True)
-                except IntegrityError as e:
-                    error_message = "Filled jar with this Jar and Product already exists."
-                    return render(request, 'add_filled_jar.html', {'form': form, 'error_message': error_message})
+                except ValueError as e:   # Changed IntegrityError to ValueError
+                    messages.error(request, str(e))
+                    return render(request, 'add_filled_jar.html', {'form': form})
 
             return redirect('list_filled_jars')
-        else:
-            error_message = "There's an error in the form."
-            return render(request, 'add_filled_jar.html', {'form': form, 'error_message': error_message, 'form_errors': form.errors})
+        
+        # For form errors
+        for error in form.errors.values():
+            messages.error(request, error)
+
     else:
         form = FilledJarForm()
 
-    context = {
-        'form': form,
-        'error_message': error_message
-    }
+    return render(request, 'add_filled_jar.html', {'form': form})
 
-    return render(request, 'add_filled_jar.html', context)
 
 
 def list_jars(request):
@@ -320,11 +315,12 @@ def delete_box_batch(request, batch_id):
 def add_fill_box(request):
     if request.method == 'POST':
         form = FilledBoxForm(request.POST)
-        if form.is_valid():
+        if form.is_valid():           
             # Get the box type and its quantity
             box_type = form.cleaned_data['box_type']
-            box_quantity = form.cleaned_data['quantity']
-
+            box_quantity = form.cleaned_data['quantity_fill_box']
+            print(f'the quantity of the boxes is : {box_quantity}')
+            
             # Construct the filled_jars_data list
             filled_jars_data = []
             for field_name, jars_quantity in form.cleaned_data.items():
@@ -333,11 +329,17 @@ def add_fill_box(request):
                     jar_size_str = float(jar_size_str.rstrip(" KG)"))
                     total_jars_needed = jars_quantity * box_quantity
                     filled_jars_data.append((product_name, jar_size_str, total_jars_needed))
+            try : 
 
-            # Create the filled box
-            filled_box = form.save(commit=False)
-            # Deduct the filled jars and boxes
-            filled_box.fill(filled_jars_data, box_quantity)
+                # Create the filled box
+                filled_box = form.save(commit=False)
+                print("Initial FilledBox quantity:", filled_box.quantity_fill_box)
+                # Deduct the filled jars and boxes
+                filled_box.fill(filled_jars_data, box_quantity)
+
+            except ValueError as e:
+                messages.error(request,str(e))
+                return redirect('add_fill_box')
 
 
             return redirect('list_filled_jars')
@@ -384,8 +386,8 @@ def main(request):
     box_quantity = [box.quantity_in_stock for box in boxes]
 
     #extraction of the quantity and the type of filled box 
-    fill_box_type = [boxFilled.box_type for boxFilled in boxesFilled ]
-    fill_box_quantity = [boxFilled.quantity for boxFilled in boxesFilled]
+    fill_box_type = [str(boxFilled.box_type) for boxFilled in boxesFilled ]
+    fill_box_quantity = [boxFilled.quantity_fill_box for boxFilled in boxesFilled]
 
     context = {
         'product_names': product_name,
@@ -406,8 +408,3 @@ def main(request):
     }
     return render(request,'main.html',context)
 
-
-def get_box_config(request):
-    box_type = request.GET.get('box_type')
-    config = BOX_CONFIG.get(box_type,{})
-    return JsonResponse(config,safe=False)

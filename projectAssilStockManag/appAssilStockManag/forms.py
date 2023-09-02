@@ -79,7 +79,7 @@ class FilledBoxForm(forms.ModelForm):
 class FilledBoxForm(forms.ModelForm):
     class Meta:
         model = FilledBox
-        fields = ['box_type', 'quantity'] 
+        fields = ['box_type', 'quantity_fill_box'] 
 
     def __init__(self, *args, **kwargs):
         super(FilledBoxForm, self).__init__(*args, **kwargs)
@@ -92,5 +92,6 @@ class FilledBoxForm(forms.ModelForm):
                     label=f"Quantity for {jar_type.capitalize()} ({jar_size} KG)", 
                     initial=0,
                     min_value=0,
+                    max_value=1,
                     widget=forms.NumberInput()
                 )

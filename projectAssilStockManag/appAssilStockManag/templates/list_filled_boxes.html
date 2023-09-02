@@ -7,7 +7,7 @@
 
 <h1>LISTE DES COFFRET REMPLI</h1>
 
-<table class="table">
+<table class="table table-bordered">
     <thead>
         <tr>
             <th>Box Type</th>
@@ -27,7 +27,7 @@
                 {% endfor %}
              </td>
              
-            <td>{{ box.quantity }}</td>
+            <td>{{ box.quantity_fill_box }}</td>
         </tr>
         {% endfor %}
     </tbody>
