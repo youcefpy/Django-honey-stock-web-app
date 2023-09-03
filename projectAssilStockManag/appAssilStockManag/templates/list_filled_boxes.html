@@ -3,8 +3,8 @@
 
 {% block title %}LISTE DES COFFRET REMPLI{% endblock  %}
 
-{% block content %}
-
+ {% block content %}
+{% comment %} 
 <h1>LISTE DES COFFRET REMPLI</h1>
 
 <table class="table table-bordered">
@@ -31,5 +31,41 @@
         </tr>
         {% endfor %}
     </tbody>
+</table>  {% endcomment %}
+
+
+
+<h1 style='margin-top:1rem'>LISTE DES COFFRET REMPLI apres regroupemet par des bocal </h1>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Type Coffret</th>
+            <th>Bocal Dans Coffret</th>
+            <th>Quantiter</th>
+            <th>Supprimer</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for box in result %}
+            {% for jars_inside, quantity in box.jars_inside_dict.items %}
+            <tr>
+                <td>{{ box.box_type }}</td>
+                <td>{{ jars_inside }}</td>
+                <td>{{ quantity }}</td>
+                <td>
+                    <form action="{% url 'delete_filled_box' box_id %}" method="post" onsubmit="return confirmDeleteBatch();">
+                        {% csrf_token %}
+                        <button class='btn btn-danger'>Supprimer</button>
+                    </form>  
+                </td>
+            </tr>
+            {% endfor %}
+        {% endfor %}
+    </tbody>
 </table>
+
+
+
 {% endblock %}
+

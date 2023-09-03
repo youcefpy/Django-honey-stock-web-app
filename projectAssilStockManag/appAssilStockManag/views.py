@@ -320,7 +320,7 @@ def add_fill_box(request):
             box_type = form.cleaned_data['box_type']
             box_quantity = form.cleaned_data['quantity_fill_box']
             print(f'the quantity of the boxes is : {box_quantity}')
-            
+
             # Construct the filled_jars_data list
             filled_jars_data = []
             for field_name, jars_quantity in form.cleaned_data.items():
@@ -351,10 +351,68 @@ def add_fill_box(request):
 
 
 def list_filled_boxes(request):
-    filled_boxes = FilledBox.objects.all()
-    return render(request, 'list_filled_boxes.html', {'filled_boxes': filled_boxes})
+    # filled_boxes = FilledBox.objects.all()
+    context = {}
+    aggregated_data =FilledBox.objects.values('box_type').annotate(total_quantity=Sum('quantity_fill_box')).order_by('box_type')
+    result = []
 
+    for box_data in aggregated_data:
+        box_type_id = box_data['box_type']
+        boxes_of_this_type = FilledBox.objects.filter(box_type_id=box_type_id)
+        
+        jars_inside_dict = {}
+        
+        for box in boxes_of_this_type:
+            jars_inside = " ".join([f"{item.jar.product.name_product} ({item.jar.size}KG) x {item.quantity}" for item in box.filledboxjars_set.all()])
+            if jars_inside in jars_inside_dict:
+                jars_inside_dict[jars_inside] = jars_inside_dict.get(jars_inside, 0) + box.quantity_fill_box
+            else:
+                jars_inside_dict[jars_inside] = box.quantity_fill_box
 
+        result.append({
+            'box_id': box.pk,
+            'box_type': boxes_of_this_type.first().box_type,
+            'jars_inside_dict': jars_inside_dict
+        })
+        context = {
+            # 'filled_boxes':filled_boxes,
+            'result':result,
+        }
+
+    return render(request, 'list_filled_boxes.html', context)
+
+def delete_filled_box(request, fill_box_id):
+    """
+        When we delete the filled box, we will increment the quantity of filled jars 
+        back to the FilledJar and also increment the box's quantity.
+    """
+    filled_box = get_object_or_404(FilledBox, id=fill_box_id)
+    
+    # Reconstruct the filled_jars_data based on the filled box
+    filled_jars_data = [
+        (item.jar.product.name_product, item.jar.size, item.quantity * filled_box.quantity_fill_box) 
+        for item in filled_box.filledboxjars_set.all()
+    ]
+
+    # Re-add jars to the FilledJar stock
+    for product_name, jar_size, total_jars_deleted in filled_jars_data:
+        try:
+            filled_jar = FilledJar.objects.get(jar__size=jar_size, product__name_product=product_name)
+            filled_jar.quantity_field += total_jars_deleted
+            filled_jar.save()
+        except FilledJar.DoesNotExist:
+            raise ValueError(f"No {product_name} jars of size {jar_size} KG in stock.")
+
+    # Increment the box's quantity in stock
+    filled_box.box_type.quantity_in_stock += filled_box.quantity_fill_box
+    filled_box.box_type.save()
+    
+    filled_box.delete()
+    
+    messages.success(request, "Filled Box deleted successfully!")
+    return redirect('list_filled_boxes')
+
+    
 def main(request):
     products = HoneyProduct.objects.all()
     jars = Jar.objects.all()

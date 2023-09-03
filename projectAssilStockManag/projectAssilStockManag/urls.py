@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path
 from appAssilStockManag.views import add_honey_product, add_product_batch,list_products
 from appAssilStockManag.views import delete_product, delete_batch,add_jar,add_jar_batch,add_filled_jar,list_jars,list_jars_filled,delete_jar,delete_jar_batch,add_ticket,delete_jar_batch
-from appAssilStockManag.views import list_tickets,add_batch_ticket,delete_ticket_batch,delete_ticket, add_box,add_box_batch,list_box,delete_box,delete_box_batch,add_fill_box,list_filled_boxes,main
+from appAssilStockManag.views import list_tickets,add_batch_ticket,delete_ticket_batch,delete_ticket, add_box,add_box_batch,list_box,delete_box,delete_box_batch,add_fill_box,list_filled_boxes,main,delete_filled_box
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('',main,name='main'),
@@ -30,4 +30,5 @@ urlpatterns = [
     path('delete_box_batch/<int:batch_id>',delete_box_batch,name='delete_box_batch'),
     path('add_fill_box/',add_fill_box,name='add_fill_box'),
     path('list_filled_boxes/', list_filled_boxes, name='list_filled_boxes'),  
+    path('delete_filled_box/<int:fill_box_id>',delete_filled_box,name='delete_filled_box'),
 ]
