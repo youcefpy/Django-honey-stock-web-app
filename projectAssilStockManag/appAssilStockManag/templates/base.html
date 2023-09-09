@@ -129,10 +129,10 @@
                              VENTE
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
-                          <li><a class="dropdown-item" href="#">EFFECTUER UNE VENTE BOCAL</a></li>
+                          <li><a class="dropdown-item" href="{% url 'add_sell_filled_jars' %}">EFFECTUER UNE VENTE BOCAL</a></li>
                           <li><a class="dropdown-item" href="#">EFFECTUER UNE VENTE COFFERT</a></li>
                           <li><hr class="dropdown-divider"></li>
-                          <li><a class="dropdown-item" href="#">LIST DES MIEL (POTS/CHAHDA) VENDU</a></li>
+                          <li><a class="dropdown-item" href="{% url 'list_sell_jars' %}">LIST DES MIEL (POTS/CHAHDA) VENDU</a></li>
                           <li><a class="dropdown-item" href="#">LIST DES COFFRETS (POTS/CHAHDA) VENDU</a></li>
                         </ul>
                       </li>
@@ -142,6 +142,9 @@
                     </ul>
                   </div>
                 </div>
+                {% if user.is_authenticated %}
+                  <a href="{% url 'logout' %}" class='btn btn-danger'>Logout</a>
+                {% endif %}
               </nav>
         </div>
     </header>

@@ -10,6 +10,7 @@
             <th>Taille Du Bocal</th>
             <th>Nom Produit</th>
             <th>Quantiter des bocal rempli</th>
+            <th>Supprimer</th>
             <th>Date de remplisage</th>
         </tr>
     </thead>
@@ -19,6 +20,13 @@
                 <td>{{ jar_info.jar.size }}</td>
                 <td>{{ jar_info.product.name_product }}</td>
                 <td>{{ jar_info.quantity_field }}</td>
+                <td>
+                    <form method='post' action="{% url 'delete_filled_jar' jar_info.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this item?');">Supprimer</button>
+                    </form>
+                    
+                </td>
                 <td>{{ jar_info.filled_date }}</td>
             </tr>
         {% endfor %}

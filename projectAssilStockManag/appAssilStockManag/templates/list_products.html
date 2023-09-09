@@ -3,15 +3,15 @@
 {% block title %}LISTE DES PRODUITS{% endblock %}
 
 {% block content %}
-
+    <h1>LIST DES PRODUIT </h1>
     <table class='table table-bordered'>
         <thead>
             <tr>
-                <th>Name Product</th>
-                <th>Quantity in Stock (kg)</th>
-                <th>Price/KG</th>
-                <th>History of Purchase/Batch</th>
-                <th>Delete the product</th>
+                <th>Nom Produit</th>
+                <th>Quantiter de stock en (kg)</th>
+                <th>Prix/KG</th>
+                <th>Historique des Achat</th>
+                <th>Supprimer le produit</th>
             </tr>
         </thead>
         <tbody>
@@ -19,18 +19,21 @@
             <tr>
                 <td>{{ product.name_product }}</td>
                 <td>{{ product.quantity_in_the_stock  }}</td>
-                <td>{{ product.weighted_average_price |floatformat:2 }}</td>
+                <td>{{ product.weighted_average_price |floatformat:2 }} DA</td>
                 <td>
                     <ul>
                     {% for batch in product.productbatch_set.all %}
-                        <li>
+                        <li class='d-flex' style='gap:10px; margin-bottom:10px'>
                             Date: {{ batch.date_received }}, 
-                            Quantity: {{ batch.quantity_received }}kg, 
-                            Price: {{ batch.price_per_kg }} , 
+                            Quantiter: {{ batch.quantity_received }}kg, 
+                            Prix: {{ batch.price_per_kg }} DA, 
                             <form action="{% url 'delete_batch' batch.id %}" method="post" onsubmit= "return confirmDeleteBatch();">
                                 {% csrf_token %}
                                 <button class='btn btn-danger'>Supprimer l'arrivage</button>
-
+                            </form>
+                            <form method="POST" action="{% url 'update_product_batch' batch.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class='btn btn-primary'>Modifier</button>
                             </form>
                         </li>
                     {% endfor %}    
@@ -40,7 +43,6 @@
                     <form action="{% url 'delete_product' product.id %}" method="post" onsubmit="return confirmDelete();">
                         {% csrf_token %}
                         <button class='btn btn-danger'>Supprimer le produit</button>
-
                     </form>
                 </td>
             </tr>

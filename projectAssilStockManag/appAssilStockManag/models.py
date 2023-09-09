@@ -1,9 +1,13 @@
 from django.db import models
 from decimal import Decimal
 from django.db import transaction
+from django.db.models import Count
+import logging
+
+
 
 class HoneyProduct(models.Model):
-    name_product=models.CharField(max_length=255)
+    name_product=models.CharField(max_length=255,unique=True)
     quantity_in_the_stock= models.DecimalField(max_digits=10,decimal_places=2,default=0)
     date_entry = models.DateField(auto_now_add=True)
 
@@ -32,10 +36,14 @@ class ProductBatch(models.Model):
     price_per_kg = models.DecimalField(max_digits=10,decimal_places=2)
 
     def save(self, *args, **kwargs):
-        if not self.pk:  
-            product = HoneyProduct.objects.get(id=self.product.id)
+        product = HoneyProduct.objects.get(id=self.product.id)
+        if not self.pk:  # If this is a new batch
             product.quantity_in_the_stock += self.quantity_received
-            product.save()
+        else:  # If this is an update
+            old_batch = ProductBatch.objects.get(id=self.id)
+            product.quantity_in_the_stock -= old_batch.quantity_received  # remove old quantity
+            product.quantity_in_the_stock += self.quantity_received  # add new quantity
+        product.save()
         super(ProductBatch, self).save(*args, **kwargs)
 
     @property
@@ -53,7 +61,7 @@ class Jar(models.Model):
         (0.25, '250g'),
         (0.5, '500g'),
     ]
-    size = models.FloatField(choices=JAR_SIZES)
+    size = models.FloatField(choices=JAR_SIZES,unique=True)
     quantity_in_the_stock = models.IntegerField(default=0)
     
     @property
@@ -90,7 +98,13 @@ class JarBatch(models.Model):
     def total_price(self):
         return self.quantity_received * self.price_jar
    
-    
+
+class Sku(models.Model):
+    code  =  models.CharField(max_length=255,unique=True)
+    title =  models.CharField(max_length=255)
+
+    def __str__(self) :
+        return f"{self.code}"
 
 class FilledJar(models.Model):
     jar = models.ForeignKey(Jar, on_delete=models.CASCADE)
@@ -98,6 +112,7 @@ class FilledJar(models.Model):
     quantity_field= models.PositiveBigIntegerField()
     filled_date = models.DateField(auto_now_add=True)
     size = models.DecimalField(max_digits=5, decimal_places=3)
+    sku = models.ForeignKey(Sku,on_delete=models.CASCADE)
 
 
     def save(self, update_stock=False, *args, **kwargs):
@@ -115,11 +130,14 @@ class FilledJar(models.Model):
             if self.jar.quantity_in_the_stock < self.quantity_field:
                 raise ValueError('Pas assez de bocale pour le remplisage')
 
+            
             # Manage ticket stock
             ticket_type = f'{int(self.jar.size * 1000)}g' 
             ticket_name = self.product.name_product
             try:
                 ticket = Ticket.objects.get(type_ticket=ticket_type,product__name_product=ticket_name)
+                if ticket.quantity_in_the_stock < 0 :
+                    raise ValueError ('Pas assez d\'etiquette dans le stock')
             except Ticket.DoesNotExist:
                 raise ValueError(f"No ticket found for type: {ticket_type}")
 
@@ -136,7 +154,6 @@ class FilledJar(models.Model):
             self.jar.save()
 
         super(FilledJar, self).save(*args, **kwargs)
-
 
     def __str__(self):
         return f"{self.product} ({self.size}KG)"
@@ -196,7 +213,7 @@ class Box(models.Model):
         ('coffret 8500', 'coffret 8500'),
         ('coffret 9900', 'coffret 9900'),
     ]
-    type_box = models.CharField(max_length=50, choices=COFFRET_TYPES )
+    type_box = models.CharField(max_length=50, choices=COFFRET_TYPES, unique=True)
     quantity_in_stock = models.IntegerField(default=0)
 
     @property
@@ -239,33 +256,47 @@ class FilledBox(models.Model):
     filled_jars = models.ManyToManyField(FilledJar, through='FilledBoxJars')
     fill_date = models.DateField(auto_now_add=True)
     quantity_fill_box = models.PositiveIntegerField(default=0)
+    jars_signature = models.CharField(max_length=255, blank=True, null=True)
+    sku = models.ForeignKey(Sku,on_delete=models.CASCADE,null=True,blank=True)
 
-    @transaction.atomic
     def fill(self, filled_jars_data, box_quantity):
+        jars_signature = "-".join(sorted([f"{product_name}-{jar_size}" for product_name, jar_size, _ in filled_jars_data]))
+        similar_filled_box = FilledBox.objects.filter(box_type=self.box_type, jars_signature=jars_signature).first()
+        
+        if similar_filled_box:
+            similar_filled_box.quantity_fill_box += box_quantity
+            similar_filled_box.save()
+            # Use the existing box for subsequent operations
+            box_for_operations = similar_filled_box
+        else:
+            self.jars_signature = jars_signature
+            self.quantity_fill_box = box_quantity
+            self.save()
+            # Use the current instance for subsequent operations
+            box_for_operations = self
+
+        # Now, we know box_for_operations is saved in the database and has a valid id.
         # Deduct jars from the FilledJar model and associate with FilledBox
         for product_name, jar_size, total_jars_needed in filled_jars_data:
             try:
                 filled_jar = FilledJar.objects.get(jar__size=jar_size, product__name_product=product_name)
             except FilledJar.DoesNotExist:
                 raise ValueError(f"No {product_name} jars of size {jar_size} KG in stock.")
+            
             if filled_jar.quantity_field < total_jars_needed:
                 raise ValueError(f"Not enough {product_name} jars of size {jar_size} KG in stock to fill the boxes.")
+            
             filled_jar.quantity_field -= total_jars_needed
             filled_jar.save()
-            
-            self.save()
+
             # Using the ManyToMany relationship through the intermediary model
-            filled_box_jar = FilledBoxJars(box=self, jar=filled_jar, quantity=total_jars_needed)
-            filled_box_jar.save()
-            
+            filled_box_jar = FilledBoxJars(box=box_for_operations, jar=filled_jar, quantity=total_jars_needed)
+            filled_box_jar.save()        
+
         print("Box quantity:", box_quantity)
         self.box_type.quantity_in_stock -= box_quantity
+    
         self.box_type.save()
-        print("Quantity before update:", self.quantity_fill_box)
-        # self.quantity_fill_box += box_quantity        
-        self.save()
-        print("Quantity after update:", self.quantity_fill_box)
-        
 
     def __str__(self):
         return f"{self.box_type}"
@@ -275,3 +306,36 @@ class FilledBoxJars(models.Model):
     box = models.ForeignKey(FilledBox, on_delete=models.CASCADE)
     jar = models.ForeignKey(FilledJar, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=0)
+
+
+class SoldFilledJar(models.Model):
+    filled_jar = models.ForeignKey(FilledJar, on_delete=models.CASCADE)
+    sold_date = models.DateField(auto_now_add=True)
+    quantity_sell_jars = models.IntegerField(default=1)
+    price_sell = models.DecimalField(max_digits=10,decimal_places=2)
+    
+    def total_price(self):
+        return self.quantity_sell_jars * self.price_sell
+    
+    def save(self,*args,**kwargs):
+        super(SoldFilledJar,self).save(*args,**kwargs)
+
+        self.filled_jar.quantity_field -= self.quantity_sell_jars 
+        self.filled_jar.save()
+
+
+class SoldFilledBox(models.Model):
+    filled_box  = models.ForeignKey(FilledBox, on_delete=models.CASCADE)
+    sold_date = models.DateField(auto_now_add=True)
+    quantity_sell_box = models.IntegerField(default=1)
+    price_sell = models.DecimalField(max_digits=10,decimal_places=2)
+    
+    def total_price(self):
+        return self.quantity_sell_box * self.price_sell
+    
+    def save(self,*args,**kwargs):
+        super(SoldFilledBox, self).save(*args, **kwargs)  # Call the "real" save() method.
+
+        #decrease the quantity of filled_jars : 
+        self.filled_box.quantity_fill_box -= self.quantity_sell_box
+        self.filled_box.save()

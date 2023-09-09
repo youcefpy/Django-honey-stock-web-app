@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import HoneyProduct,ProductBatch, Box,BoxBatch,FilledJar,Jar,Ticket, TicketBatch,FilledBox
+from .models import HoneyProduct,ProductBatch, Box,BoxBatch,FilledJar,Jar,Ticket, TicketBatch,FilledBox,Sku,SoldFilledJar,SoldFilledBox
 
 
 
@@ -38,7 +38,14 @@ class FilledBoxAdmin(admin.ModelAdmin):
     list_display = ['box_type']
     
 
+class SkuAdmin(admin.ModelAdmin):
+    list_display=('code','title')
 
+class SoldFilledJarAdmin(admin.ModelAdmin):
+    list_display=['filled_jar','quantity_sell_jars','price_sell']
+
+class SoldFilledBoxAdmin(admin.ModelAdmin):
+    list_display=['filled_box','quantity_sell_box','price_sell']
 
 admin.site.register(HoneyProduct,HoneyProductAdmin)
 admin.site.register(ProductBatch,ProductBatchAdmin)
@@ -48,5 +55,7 @@ admin.site.register(Ticket,TicketAdmin)
 admin.site.register(Box,BoxAdmin)
 admin.site.register(BoxBatch,BoxBatchAdmin) 
 admin.site.register(FilledBox,FilledBoxAdmin)
-
+admin.site.register(Sku,SkuAdmin)
+admin.site.register(SoldFilledJar,SoldFilledJarAdmin)
+admin.site.register(SoldFilledBox,SoldFilledBoxAdmin)
 

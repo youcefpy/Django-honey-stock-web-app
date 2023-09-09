@@ -43,27 +43,34 @@
             <th>Type Coffret</th>
             <th>Bocal Dans Coffret</th>
             <th>Quantiter</th>
+            <th>Modifier</th>
             <th>Supprimer</th>
         </tr>
     </thead>
     <tbody>
         {% for box in result %}
-            {% for jars_inside, quantity in box.jars_inside_dict.items %}
             <tr>
                 <td>{{ box.box_type }}</td>
-                <td>{{ jars_inside }}</td>
-                <td>{{ quantity }}</td>
+                <td>{{ box.jars_inside }}</td>
+                <td>{{ box.quantity }}</td>
                 <td>
-                    <form action="{% url 'delete_filled_box' box_id %}" method="post" onsubmit="return confirmDeleteBatch();">
-                        {% csrf_token %}
-                        <button class='btn btn-danger'>Supprimer</button>
-                    </form>  
+                    {% if box.box_id %}
+                        <a href="#" class="btn btn-primary">Modifier</a>
+                    {% endif %}
+                </td>                
+                <td>
+                    {% if box.box_id %}
+                        <form action="{% url 'delete_filled_box' box.box_id %}" method="post" onsubmit="return confirmDeleteBatch();">
+                            {% csrf_token %}
+                            <button class='btn btn-danger'>Supprimer</button>
+                        </form>  
+                    {% endif %}
                 </td>
             </tr>
-            {% endfor %}
         {% endfor %}
     </tbody>
 </table>
+
 
 
 

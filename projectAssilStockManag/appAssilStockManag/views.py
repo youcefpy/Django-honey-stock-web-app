@@ -1,19 +1,42 @@
 from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
-from .models import Jar, HoneyProduct, FilledJar,ProductBatch,JarBatch,Ticket,TicketBatch,Box,BoxBatch,FilledBox
+from .models import Jar, HoneyProduct, FilledJar,ProductBatch,JarBatch,Ticket,TicketBatch,Box,BoxBatch,FilledBox,FilledBoxJars,SoldFilledJar,Sku
 from django.db import transaction
-from .forms import HoneyProductForm, ProductBatchForm,JarForm, JarBatchForm, FilledJarForm,TicketForm,TicketBatchForm,BoxForm,BoxBatchForm,FilledBoxForm
+from .forms import HoneyProductForm, ProductBatchForm,JarForm, JarBatchForm, FilledJarForm,TicketForm,TicketBatchForm,BoxForm,BoxBatchForm,FilledBoxForm,SkuForm,SoldFilledJarForm,ProductBatchUpdateForm,SignUpForm
 from django.db.models import Sum
 from .constants import BOX_CONFIG
 from django.db import IntegrityError
 from django.contrib import messages
+from decimal import Decimal
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
+from django.contrib.auth import login
+
+
+def signup(request):
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            # Log the user in.
+            login(request, user)
+            return redirect('login')  # or your desired redirect page
+    else:
+        form = SignUpForm()
+    return render(request, 'signup.html', {'form': form})
+
+@login_required
 def add_honey_product(request):
     if request.method == "POST":
         form=HoneyProductForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('add_product_batch')
-
+        if form.is_valid():   
+            name_from_form = form.cleaned_data['name_product']
+            if HoneyProduct.objects.filter(name_product=name_from_form).exists():
+                messages.error(request,'Le produit exist deja dans la base de donne.')
+            else : 
+                form.save()
+                # messages.success(request, 'Product added successfully!')
+                return redirect('add_product_batch')          
     else:
         form = HoneyProductForm()
     context={
@@ -21,6 +44,7 @@ def add_honey_product(request):
     }
     return render(request,'add_honey_product.html',context)
 
+@login_required
 def add_product_batch(request):
     if request.method == "POST":
         form = ProductBatchForm(request.POST)
@@ -34,18 +58,41 @@ def add_product_batch(request):
     }
     return render(request,'add_product_batch.html',context)
 
+@login_required
 def list_products(request):
     products = HoneyProduct.objects.all()
     return render(request, 'list_products.html', {'products': products})
 
-
+@login_required
 def delete_product(request,product_id):
+    if not request.user.is_staff:  # Check if the user is staff (i.e., admin)
+        return HttpResponseForbidden("You don't have permission to access this page.")
     if request.method == "POST":
         product = get_object_or_404(HoneyProduct,id = product_id)
         product.delete()
         return redirect('list_products')
 
+@login_required
+def update_product_batch(request,batch_id):
+    batch = get_object_or_404(ProductBatch,id=batch_id)
+    if request.method == "POST":
+        form = ProductBatchUpdateForm(request.POST,instance = batch)
 
+        if form.is_valid():
+            form.save()
+            return redirect('list_products')
+    
+    else : 
+        form = ProductBatchUpdateForm(instance=batch)
+    
+    context = {
+        'form': form,
+        'batch_id': batch_id,
+    }
+    return render(request,'update_batch_product.html',context)
+
+
+@login_required
 @transaction.atomic
 def delete_batch(request, batch_id):
     batch = get_object_or_404(ProductBatch, id=batch_id)
@@ -71,7 +118,7 @@ def delete_batch(request, batch_id):
     return redirect('list_products')
 
 
-
+@login_required
 def add_jar(request):
     if request.method == 'POST':
         form = JarForm(request.POST)
@@ -83,7 +130,7 @@ def add_jar(request):
     return render(request, 'add_jar.html', {'form': form})
 
 
-
+@login_required
 def add_jar_batch(request):
     if request.method == "POST":
         form = JarBatchForm(request.POST)
@@ -95,6 +142,7 @@ def add_jar_batch(request):
         form = JarBatchForm()
     return render(request,'add_jar_batch.html',{'form':form})
 
+@login_required
 @transaction.atomic
 def delete_jar_batch(request,batch_id):
 
@@ -119,7 +167,8 @@ def delete_jar_batch(request,batch_id):
     batch.delete()
     jar.save()
     return redirect('list_jars')
- 
+
+@login_required
 def add_filled_jar(request):
     if request.method == "POST":
         form = FilledJarForm(request.POST)
@@ -128,6 +177,7 @@ def add_filled_jar(request):
             jar = form.cleaned_data.get('jar')
             product = form.cleaned_data.get('product')
             quantity = form.cleaned_data.get('quantity_field')
+            sku = form.cleaned_data.get('sku')
 
             filled_jar = FilledJar.objects.filter(jar=jar, product=product).first()
 
@@ -148,7 +198,8 @@ def add_filled_jar(request):
                     jar=jar,
                     product=product,
                     quantity_field=quantity,
-                    size=jar.size
+                    size=jar.size,
+                    sku=sku
                 )
                 try:
                     filled_jar.save(update_stock=True)
@@ -161,18 +212,62 @@ def add_filled_jar(request):
         # For form errors
         for error in form.errors.values():
             messages.error(request, error)
-
     else:
         form = FilledJarForm()
 
     return render(request, 'add_filled_jar.html', {'form': form})
 
+@login_required
+def delete_filled_jar(request, filled_jar_id):
+    if not request.user.is_staff:  # Check if the user is staff (i.e., admin)
+        return HttpResponseForbidden("You don't have permission to access this page.")
+    
+    if request.method == "POST":
+        print(f"Attempting to delete filled jar with ID: {filled_jar_id}")
+        filled_jar = get_object_or_404(FilledJar, id=filled_jar_id)
+        try:
+            with transaction.atomic():
+                # Calculate honey to be added back
+                honey_to_add = Decimal(filled_jar.jar.size) * Decimal(filled_jar.quantity_field)
 
+                # Add back honey to HoneyProduct
+                filled_jar.product.quantity_in_the_stock += honey_to_add
+                filled_jar.product.save()
+                print("Honey added back to HoneyProduct.")
+            
+                # Add back jars to Jar
+                filled_jar.jar.quantity_in_the_stock += filled_jar.quantity_field
+                filled_jar.jar.save()
+                print("Jars added back.")
 
+                # Add back the tickets
+                ticket_type = f'{int(Decimal(filled_jar.jar.size) * 1000)}g'
+                ticket_name = filled_jar.product.name_product
+                try:
+                    ticket = Ticket.objects.get(type_ticket=ticket_type, product__name_product=ticket_name)
+                    ticket.quantity_in_the_stock += filled_jar.quantity_field
+                    ticket.save()
+                    print("Tickets added back.")
+                except Ticket.DoesNotExist:
+                    raise Exception(f"No ticket found for jar of size: {filled_jar.jar.size} and product: {filled_jar.product.name_product}")
+
+                # Delete the FilledJar object
+                filled_jar.delete()
+                print("FilledJar object deleted.")
+
+        except IntegrityError:
+            messages.error(request, "Database integrity error.")
+        except Exception as e:
+            messages.error(request, f"Error deleting filled jar: {str(e)}")
+
+        return redirect('list_filled_jars')
+
+@login_required
 def list_jars(request):
     jars = Jar.objects.all()
     return render(request, 'list_jars.html', {'jars': jars})
 
+@login_required
 def list_jars_filled(request):
     filled_jars = FilledJar.objects.all()
     aggregated_jars = FilledJar.objects.values('jar__size', 'product__name_product').annotate(total_jars=Sum('quantity_field')).order_by('jar__size', 'product__name_product')
@@ -183,15 +278,18 @@ def list_jars_filled(request):
     return render(request, 'list_filled_jars.html', context)
 
 
-
+@login_required
 def delete_jar(request, jar_id):
+    if not request.user.is_staff:  # Check if the user is staff (i.e., admin)
+        return HttpResponseForbidden("You don't have permission to access this page.")
+    
     if request.method == "POST":
         jar = get_object_or_404(Jar, id=jar_id)
         jar.delete()
         return redirect('list_jars')
 
 
-
+@login_required
 def add_ticket(request):
     if request.method == "POST":
         form = TicketForm(request.POST)
@@ -206,6 +304,7 @@ def add_ticket(request):
         }
     return render(request,'add_ticket.html',context)
 
+@login_required
 def add_batch_ticket(request):
     if request.method == "POST":
         form = TicketBatchForm(request.POST)
@@ -216,17 +315,24 @@ def add_batch_ticket(request):
         form = TicketBatchForm()
     return render(request,'add_ticket_batch.html',{'form':form})
 
+@login_required
 def list_tickets(request):
     tickets = Ticket.objects.all()
     return render(request,'list_tickets.html',{'tickets':tickets})
 
 
+@login_required
 @transaction.atomic
 def delete_ticket(request,ticket_id):
+    if not request.user.is_staff:  # Check if the user is staff (i.e., admin)
+        return HttpResponseForbidden("You don't have permission to access this page.")
+    
     ticket=get_object_or_404(Ticket,id=ticket_id)
     ticket.delete()
     return redirect('list_tickets')
 
+
+@login_required
 @transaction.atomic
 def delete_ticket_batch(request, batch_id):
     batch = get_object_or_404(TicketBatch, id=batch_id)
@@ -249,6 +355,7 @@ def delete_ticket_batch(request, batch_id):
 
     return redirect('list_tickets')
 
+@login_required
 def add_box(request):
     if request.method == "POST":
         form = BoxForm(request.POST)
@@ -265,6 +372,7 @@ def add_box(request):
     }
     return render(request,'add_box.html',context)
 
+@login_required
 def add_box_batch(request):
     if request.method =='POST':
         form = BoxBatchForm(request.POST)
@@ -278,18 +386,25 @@ def add_box_batch(request):
     }
     return render(request,'add_box_batch.html',context)
 
-
+@login_required
 def list_box(request):
     boxs = Box.objects.all()
     return render(request,'list_box.html',{'boxs':boxs})
 
 
+
+@login_required
 @transaction.atomic
 def delete_box(request,box_id):
+    if not request.user.is_staff:  # Check if the user is staff (i.e., admin)
+        return HttpResponseForbidden("You don't have permission to access this page.")
+    
     box=get_object_or_404(Box,id=box_id)
     box.delete()
     return redirect('list_box')
 
+
+@login_required
 @transaction.atomic
 def delete_box_batch(request, batch_id):
     batch = get_object_or_404(BoxBatch, id=batch_id)
@@ -312,6 +427,7 @@ def delete_box_batch(request, batch_id):
 
     return redirect('list_box')
 
+@login_required
 def add_fill_box(request):
     if request.method == 'POST':
         form = FilledBoxForm(request.POST)
@@ -332,10 +448,10 @@ def add_fill_box(request):
             try : 
 
                 # Create the filled box
-                filled_box = form.save(commit=False)
-                print("Initial FilledBox quantity:", filled_box.quantity_fill_box)
+                filled_box = FilledBox(box_type=box_type)    
+                # print("Initial FilledBox quantity:", filled_box.quantity_fill_box)
                 # Deduct the filled jars and boxes
-                filled_box.fill(filled_jars_data, box_quantity)
+                filled_box = filled_box.fill(filled_jars_data, box_quantity)
 
             except ValueError as e:
                 messages.error(request,str(e))
@@ -349,39 +465,45 @@ def add_fill_box(request):
     return render(request, 'add_fill_box.html', {'form': form})
 
 
-
+@login_required
 def list_filled_boxes(request):
-    # filled_boxes = FilledBox.objects.all()
     context = {}
-    aggregated_data =FilledBox.objects.values('box_type').annotate(total_quantity=Sum('quantity_fill_box')).order_by('box_type')
     result = []
 
-    for box_data in aggregated_data:
-        box_type_id = box_data['box_type']
-        boxes_of_this_type = FilledBox.objects.filter(box_type_id=box_type_id)
-        
-        jars_inside_dict = {}
-        
-        for box in boxes_of_this_type:
-            jars_inside = " ".join([f"{item.jar.product.name_product} ({item.jar.size}KG) x {item.quantity}" for item in box.filledboxjars_set.all()])
-            if jars_inside in jars_inside_dict:
-                jars_inside_dict[jars_inside] = jars_inside_dict.get(jars_inside, 0) + box.quantity_fill_box
-            else:
-                jars_inside_dict[jars_inside] = box.quantity_fill_box
+    all_boxes = FilledBox.objects.all().prefetch_related('filledboxjars_set__jar__product')
 
-        result.append({
-            'box_id': box.pk,
-            'box_type': boxes_of_this_type.first().box_type,
-            'jars_inside_dict': jars_inside_dict
-        })
-        context = {
-            # 'filled_boxes':filled_boxes,
-            'result':result,
-        }
+    box_aggregator = {}
 
+    for box in all_boxes:
+        # Create a set to ensure unique jars, so no repetition.
+        unique_jars = set([f"{item.jar.product.name_product} ({item.jar.size}KG)" for item in box.filledboxjars_set.all()])
+        jars_inside = " ".join(sorted(unique_jars))
+
+        signature = f"{box.box_type.id}-{jars_inside}"
+
+        if signature not in box_aggregator:
+            box_aggregator[signature] = {
+                'box_id': box.pk,
+                'box_type': box.box_type,
+                'jars_inside': jars_inside,
+                'quantity': 0
+            }
+
+        box_aggregator[signature]['quantity'] += box.quantity_fill_box
+
+    result = list(box_aggregator.values())
+
+    context = {
+        'result': result,
+    }
     return render(request, 'list_filled_boxes.html', context)
 
+
+@login_required
 def delete_filled_box(request, fill_box_id):
+    if not request.user.is_staff:  # Check if the user is staff (i.e., admin)
+        return HttpResponseForbidden("You don't have permission to access this page.")
+    
     """
         When we delete the filled box, we will increment the quantity of filled jars 
         back to the FilledJar and also increment the box's quantity.
@@ -401,7 +523,8 @@ def delete_filled_box(request, fill_box_id):
             filled_jar.quantity_field += total_jars_deleted
             filled_jar.save()
         except FilledJar.DoesNotExist:
-            raise ValueError(f"No {product_name} jars of size {jar_size} KG in stock.")
+            messages.error(request, f"No {product_name} jars of size {jar_size} KG in stock. Delete operation aborted.")
+            return redirect('list_filled_boxes')
 
     # Increment the box's quantity in stock
     filled_box.box_type.quantity_in_stock += filled_box.quantity_fill_box
@@ -412,7 +535,8 @@ def delete_filled_box(request, fill_box_id):
     messages.success(request, "Filled Box deleted successfully!")
     return redirect('list_filled_boxes')
 
-    
+
+@login_required
 def main(request):
     products = HoneyProduct.objects.all()
     jars = Jar.objects.all()
@@ -466,3 +590,47 @@ def main(request):
     }
     return render(request,'main.html',context)
 
+@login_required
+def add_sku(request):
+    if request.method == "POST":
+        form = SkuForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('list_sku')
+        else : 
+            print(form.errors)
+    else :
+        form = SkuForm()
+    
+    return render(request,'add_sku_product.html',{'form':form})
+
+@login_required
+def list_sku(request):
+    list_sku = Sku.objects.all()
+    context={
+        "list_sku":list_sku,
+    }
+    return render(request,'list_sku.html',context)
+
+@login_required
+def add_sell_fill_jars(request):
+    if request.method == "POST":
+        form = SoldFilledJarForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('list_sell_jars')
+
+    else:
+        form = SoldFilledJarForm()
+    context={
+        'form':form
+    }
+    return render(request,'add_sell_filled_jars.html',context)
+
+@login_required
+def list_sell_jars(request):
+    list_sell_jars =SoldFilledJar.objects.all()
+    context={
+        'list_sell_jars':list_sell_jars
+    }
+    return render(request,'list_sell_jars.html',context)

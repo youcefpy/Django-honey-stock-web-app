@@ -1,8 +1,19 @@
 #forms
 
 from django import forms
-from .models import HoneyProduct, ProductBatch,Jar,JarBatch,FilledJar,Ticket,TicketBatch,Box,BoxBatch,FilledBox
+from .models import HoneyProduct, ProductBatch,Jar,JarBatch,FilledJar,Ticket,TicketBatch,Box,BoxBatch,FilledBox,Sku,SoldFilledJar,SoldFilledBox
 from .constants import BOX_CONFIG
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+
+
+class SignUpForm(UserCreationForm):
+    email = forms.EmailField(max_length=254, required=True, widget=forms.EmailInput())
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'password1', 'password2')
+
 class HoneyProductForm(forms.ModelForm):
     class  Meta:
         model = HoneyProduct
@@ -12,6 +23,12 @@ class ProductBatchForm(forms.ModelForm):
     class Meta:
         model = ProductBatch
         fields = ['product','quantity_received','price_per_kg']
+
+
+class ProductBatchUpdateForm(forms.ModelForm):
+    class Meta:
+        model = ProductBatch
+        fields = ['quantity_received', 'price_per_kg']
 
 
 class JarForm(forms.ModelForm):
@@ -28,7 +45,7 @@ class JarBatchForm(forms.ModelForm):
 class FilledJarForm(forms.ModelForm):
     class Meta:
         model = FilledJar
-        fields = ['jar', 'product', 'quantity_field']
+        fields = ['jar', 'product','sku', 'quantity_field']
 
     def clean(self):
         cleaned_data = super().clean()
@@ -79,7 +96,7 @@ class FilledBoxForm(forms.ModelForm):
 class FilledBoxForm(forms.ModelForm):
     class Meta:
         model = FilledBox
-        fields = ['box_type', 'quantity_fill_box'] 
+        fields = ['box_type','sku', 'quantity_fill_box']
 
     def __init__(self, *args, **kwargs):
         super(FilledBoxForm, self).__init__(*args, **kwargs)
@@ -95,3 +112,20 @@ class FilledBoxForm(forms.ModelForm):
                     max_value=1,
                     widget=forms.NumberInput()
                 )
+
+class SkuForm(forms.ModelForm):
+    class Meta:
+        model = Sku
+        fields = ['code','title'] 
+
+
+class SoldFilledJarForm(forms.ModelForm):
+    class Meta:
+        model = SoldFilledJar
+        fields = '__all__' 
+
+class SoldFilledBoxForm(forms.ModelForm):
+    class Meta:
+        model = SoldFilledBox
+        fields = '__all__'
+        

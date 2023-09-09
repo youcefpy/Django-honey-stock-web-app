@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+
+{% block title %}Liste des Vente Produit{% endblock  %}
+
+{% block content %}
+    {% if form.errors %}
+        <div class="alert alert-danger">
+            <strong>There were some errors in the form:</strong>
+            <ul>
+            {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                    <li>{{ field }}: {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    <h1>Liste Sku</h1>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Taille Du Bocal</th>
+                <th>Nom Produit</th>
+
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for elem in list_sku %}
+                <tr>
+                    <td>{{ elem.code }}</td>
+                    <td>{{ elem.title }}</td>
+                </tr>
+            {% endfor %}
+
+
+        </tbody>
+
+    </table>
+
+{% endblock %}
