@@ -15,11 +15,16 @@ class SignUpForm(UserCreationForm):
         fields = ('username', 'email', 'password1', 'password2')
 
 class HoneyProductForm(forms.ModelForm):
+    name_product = forms.CharField(label='Produit',max_length=255)
     class  Meta:
         model = HoneyProduct
         fields = ['name_product',]
 
 class ProductBatchForm(forms.ModelForm):
+    product = forms.ModelChoiceField(queryset=HoneyProduct.objects.all(), label='Produit')
+    quantity_received = forms.DecimalField(label='Quantité reçue', max_digits=10, decimal_places=2)
+    price_per_kg = forms.DecimalField(label='Prix par kg', max_digits=10, decimal_places=2)
+
     class Meta:
         model = ProductBatch
         fields = ['product','quantity_received','price_per_kg']
@@ -32,20 +37,33 @@ class ProductBatchUpdateForm(forms.ModelForm):
 
 
 class JarForm(forms.ModelForm):
+    size = forms.ChoiceField(choices=Jar.JAR_SIZES, label='Taille Du Bocal')
     class Meta:
         model = Jar
-        fields = '__all__'
+        fields = ['size']
 
 class JarBatchForm(forms.ModelForm):
     class Meta:
         model = JarBatch
         fields = '__all__'
+        labels = {
+            'jar':'Bocal',
+            'date_received':'Date de reception',
+            'quantity_received':'Quantiter recu',
+            'price_jar':'prix par bocal',
+        }
 
         
 class FilledJarForm(forms.ModelForm):
     class Meta:
         model = FilledJar
         fields = ['jar', 'product','sku', 'quantity_field']
+        labels={
+            'jar':'Bocal',
+            'product':'Produit',
+            'sku':'Sku',
+            'quantity_field':'Quantiter Rempli',
+        }
 
     def clean(self):
         cleaned_data = super().clean()
@@ -69,34 +87,59 @@ class TicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
         fields = ['type_ticket','product']
+        labels={
+            'type_ticket':'Type d\'etiquette',
+            'product':'Produit',
+        }
 
 class TicketBatchForm(forms.ModelForm) :
     class Meta:
         model = TicketBatch
         fields = ['ticket','quantity_received','purchase_price']
+        labels={
+            'ticket':'Etiquette',
+            'quantity_received':'Quantiter recu',
+            'purchase_price':'Prix Etiquette',
+        }
 
 
 class BoxForm(forms.ModelForm):
+    
     class Meta:
         model = Box
         fields = ['type_box']
+        labels={
+            'type_box':'Type de Coffret',
+        }
 
 class BoxBatchForm(forms.ModelForm):
     class Meta:
         model = BoxBatch
         fields  = ['box','quantity_received','purchase_price']
+        labels={
+            'box':'Coffret',
+            'quantity_received':'Quantiter recu',
+            'purchase_price':'prix d\'achat',
+        }
 
 
 class FilledBoxForm(forms.ModelForm):
     class Meta:
         model = FilledBox
         fields = ['box_type']
-
+        labels={
+            'type_box':'Type de Coffret',
+        }
 
 class FilledBoxForm(forms.ModelForm):
     class Meta:
         model = FilledBox
         fields = ['box_type','sku', 'quantity_fill_box']
+        labels={
+            'box_type':'Type de Coffret',
+            'sku':'Sku',
+            'quantity_fill_box':'Quantiter des coffret rempli',
+        }
 
     def __init__(self, *args, **kwargs):
         super(FilledBoxForm, self).__init__(*args, **kwargs)
@@ -106,7 +149,7 @@ class FilledBoxForm(forms.ModelForm):
                 field_name = f"{jar_type}_{jar_size}"
                 self.fields[field_name] = forms.IntegerField(
                     required=True, 
-                    label=f"Quantity for {jar_type.capitalize()} ({jar_size} KG)", 
+                    label=f"Quantiter pour {jar_type.capitalize()} ({jar_size} KG)", 
                     initial=0,
                     min_value=0,
                     max_value=1,
@@ -117,6 +160,10 @@ class SkuForm(forms.ModelForm):
     class Meta:
         model = Sku
         fields = ['code','title'] 
+        labels={
+            'code':'Sku',
+            'title':'Nom Produit',
+        }
 
 
 class SoldFilledJarForm(forms.ModelForm):

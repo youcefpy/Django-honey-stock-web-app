@@ -3,7 +3,11 @@
 {% block title %}LISTE DES PRODUITS{% endblock %}
 
 {% block content %}
+    
     <h1>LIST DES PRODUIT </h1>
+    <div class='mb-3'>
+        <a href="{% url 'export_products_to_excel' %}" class="btn btn-success">Excel</a>
+    </div>
     <table class='table table-bordered'>
         <thead>
             <tr>
@@ -21,7 +25,7 @@
                 <td>{{ product.quantity_in_the_stock  }}</td>
                 <td>{{ product.weighted_average_price |floatformat:2 }} DA</td>
                 <td>
-                    <ul>
+                    <ul class="scrollable-list">
                     {% for batch in product.productbatch_set.all %}
                         <li class='d-flex' style='gap:10px; margin-bottom:10px'>
                             Date: {{ batch.date_received }}, 

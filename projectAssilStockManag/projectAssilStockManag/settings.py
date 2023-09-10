@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'appAssilStockManag',
     'widget_tweaks',
+    'openpyxl',
 ]
 
 MIDDLEWARE = [

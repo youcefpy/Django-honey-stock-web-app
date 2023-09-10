@@ -11,6 +11,10 @@ from decimal import Decimal
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.contrib.auth import login
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+from django.http import HttpResponse
+from openpyxl.styles import Alignment,Font
 
 
 def signup(request):
@@ -23,7 +27,12 @@ def signup(request):
             return redirect('login')  # or your desired redirect page
     else:
         form = SignUpForm()
-    return render(request, 'signup.html', {'form': form})
+    
+    context = {
+        'form' :form,
+        'current_page': 'signup',
+    }
+    return render(request, 'signup.html', context)
 
 @login_required
 def add_honey_product(request):
@@ -634,3 +643,181 @@ def list_sell_jars(request):
         'list_sell_jars':list_sell_jars
     }
     return render(request,'list_sell_jars.html',context)
+
+
+def export_products_to_excel(request):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Products"
+
+    # Header
+    columns = ['Nom Produit', 'Quantiter de stock en (kg)', 'Prix/KG', 'Historique des Achat']
+    for col_num, column_title in enumerate(columns, 1):
+        col_letter = get_column_letter(col_num)
+        ws['{}1'.format(col_letter)] = column_title
+        ws.column_dimensions[col_letter].width = 15
+
+    # Data
+    products = HoneyProduct.objects.all()
+    for idx, product in enumerate(products, 2):
+        ws.cell(row=idx, column=1, value=product.name_product)
+        ws.cell(row=idx, column=2, value=product.quantity_in_the_stock)
+        ws.cell(row=idx, column=3, value=product.weighted_average_price)
+        
+        batches = product.productbatch_set.all()
+        batch_details = '\n'.join([f"Date: {batch.date_received}, Quantiter: {batch.quantity_received}kg, Prix: {batch.price_per_kg} DA" for batch in batches])
+        ws.cell(row=idx, column=4, value=batch_details).alignment=Alignment(wrap_text=True)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=products.xlsx'
+    wb.save(response)
+
+    return response
+
+
+def export_jars_to_excel(request):
+    wb = Workbook()
+    ws = wb.active
+    ws.title='BOCALS'
+
+    #Header
+    columns = ['Taille','Quantiter dans le stoque','Prix/bocal','Historique des Achat']
+    for col_num,column_title in enumerate(columns,1):
+        col_lettre = get_column_letter(col_num)
+        ws['{}1'.format(col_lettre)]=column_title
+        ws.column_dimensions[col_lettre].width = 15
+
+    #Data
+    jars = Jar.objects.all()
+    for idx, jar in enumerate(jars,2):
+        ws.cell(row=idx,column=1,value=jar.size)
+        ws.cell(row=idx,column=2,value=jar.quantity_in_the_stock)
+        ws.cell(row=idx,column=3,value=jar.weighted_average_price)
+
+        batches = jar.jarbatch_set.all()
+        batch_details = '\n'.join([f'Date: {batch.date_received} | Quantiter: {batch.quantity_received} | Prix: {batch.price_jar} DA' for batch in batches ])
+        ws.cell(row=idx,column=4,value=batch_details).alignment=Alignment(wrap_text=True)
+
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=jars.xlsx'
+    wb.save(response)
+
+    return response
+
+
+def export_tickets_excel(request):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Etiquette'
+
+    #headers 
+    columns=['Type','Nom de Produit','Quantiter Dans Le Stock','Prix','Historique D\'achat']
+    for cul_num,column_title in enumerate(columns,1):
+        col_lettre = get_column_letter(cul_num)
+        ws['{}1'.format(col_lettre)] = column_title
+        ws.column_dimensions[col_lettre].width=15
+
+    #data
+    tickets =Ticket.objects.all()
+    for idx,ticket in enumerate(tickets,2):
+        ws.cell(row=idx,column=1,value=ticket.type_ticket)
+        ws.cell(row=idx,column=2,value=ticket.product.name_product)
+        ws.cell(row=idx,column=3,value=ticket.quantity_in_the_stock)
+        ws.cell(row=idx,column=4,value=ticket.weighted_average) 
+
+        batches = ticket.ticketbatch_set.all()
+        batch_details ='\n'.join([f"Date: {batch.date_entry} | Quantiter: {batch.quantity_received} | Prix/Etiquette: {batch.purchase_price}"for batch in batches])
+        ws.cell(row=idx,column=5,value=batch_details).alignment=Alignment(wrap_text=True)
+
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=tickets.xlsx'
+    wb.save(response)
+
+    return response
+
+def export_filled_jars_excel(request):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = 'Bocal REmpli'
+
+    #headers 
+    columns=['Taille Du Bocal','Nom Produit','Quantiter des bocal rempli','Date de remplisage']
+    for cul_num,column_title in enumerate(columns,1):
+        col_lettre = get_column_letter(cul_num)
+        ws['{}1'.format(col_lettre)] = column_title
+        ws.column_dimensions[col_lettre].width=15
+
+    #data
+    filledJars =FilledJar.objects.all()
+    for idx,filledjar in enumerate(filledJars,2):
+        ws.cell(row=idx,column=1,value=filledjar.jar.size)
+        ws.cell(row=idx,column=2,value=filledjar.product.name_product)
+        ws.cell(row=idx,column=3,value=filledjar.quantity_field)
+        ws.cell(row=idx,column=4,value=filledjar.filled_date) 
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=filled_jars.xlsx'
+    wb.save(response)
+
+    return response
+
+def export_boxes_to_excel(request):
+    # Create a new Workbook
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Boxes"
+
+    # Add headers to the Excel file
+    headers = ['Type de coffret', 'Quantiter dans le Stoque', 'Price', 'Historique des achat/lot']
+    for col_num, header in enumerate(headers, 1):
+        col_letter = get_column_letter(col_num)
+        ws[f'{col_letter}1'] = header
+        ws[f'{col_letter}1'].font = Font(bold=True)
+    
+    # Add data to the Excel file
+    for idx, box in enumerate(Box.objects.all(), 2):
+        ws.cell(row=idx, column=1, value=box.get_type_box_display())
+        ws.cell(row=idx, column=2, value=box.quantity_in_stock)
+        ws.cell(row=idx, column=3, value=f"{box.weighted_average:.2f} DA")
+        batches = box.boxbatch_set.all()
+        batch_details = "\n".join([f"Date: {batch.date_entry} | Quantiter: {batch.quantity_received} | Prix/Coffret: {batch.purchase_price} DA" for batch in batches])
+        ws.cell(row=idx, column=4, value=batch_details).alignment = Alignment(wrap_text=True)
+
+    # Serve the Excel file to the user
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=boxes.xlsx'
+    wb.save(response)
+    return response
+
+
+def export_filled_boxes_excel(request):
+    # Create a new workbook and add a worksheet.
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Coffret Rempli"
+
+    # Headers
+    headers = ["Type Coffret", "Bocal Dans Coffret", "Quantiter"]
+    for idx, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=idx, value=header)
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal="center")
+
+    filled_boxes = FilledBox.objects.all()
+    
+    # This assumes that you've created a logic for 'result' similar to what's used in the template
+    result = []  # Implement logic here
+
+    for idx, box in enumerate(result, 2):
+        ws.cell(row=idx, column=1, value=box.box_type)
+        ws.cell(row=idx, column=2, value=box.jars_inside)
+        ws.cell(row=idx, column=3, value=box.quantity)
+
+    # Set the content type and headers for the response.
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response['Content-Disposition'] = "attachment; filename=Coffret_Rempli.xlsx"
+    wb.save(response)
+
+    return response

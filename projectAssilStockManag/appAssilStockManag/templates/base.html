@@ -142,7 +142,7 @@
                     </ul>
                   </div>
                 </div>
-                {% if user.is_authenticated %}
+                {% if user.is_authenticated and current_page != 'signup' %}
                   <a href="{% url 'logout' %}" class='btn btn-danger'>Logout</a>
                 {% endif %}
               </nav>
@@ -152,6 +152,14 @@
     <main>
         <div class='container mt-5'>
             {% block content %}
+              <style>
+                .scrollable-list {
+                    height: 100px;  /* or any desired fixed height */
+                    overflow-y: auto;
+                    border: 1px solid #ccc; /* optional: for visual clarity */
+                    padding: 5px;
+                  }
+              </style>
             
             {% endblock %}
         </div>

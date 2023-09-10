@@ -4,11 +4,11 @@
 
 {% block content %}
 
-    <canvas id="honeyProductChart" width="400" height="200"></canvas>
-    <canvas id ='JarChart'></canvas>
-    <canvas id = 'ticketChart' width='400' height='200'></canvas>
-    <canvas id='filledJarsChart' width='400',height='200'></canvas>
-    <canvas id = 'boxTypeChart' width='400' height='200'></canvas>
+    <canvas id="honeyProductChart" width="400" height="200" style='margin-bottom:2.5rem;'></canvas>
+    <canvas id ='JarChart' style='margin-bottom:2.5rem;'></canvas>
+    <canvas id = 'ticketChart' width='400' height='200' style='margin-bottom:2.5rem;'></canvas>
+    <canvas id='filledJarsChart' width='400',height='200' style='margin-bottom:2.5rem;'></canvas>
+    <canvas id = 'boxTypeChart' width='400' height='200' style='margin-bottom:2.5rem;'></canvas>
     <canvas id='filledBoxChart' width="400" height="200"></canvas>
 
     {{ product_names|json_script:"product_names" }}

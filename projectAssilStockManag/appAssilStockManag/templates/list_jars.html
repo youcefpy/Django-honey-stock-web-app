@@ -3,6 +3,12 @@
 {% block title %} LIST DES BOCALES {% endblock %}
 
 {% block content %}
+    <h1>Liste Des Bocales</h1>
+
+    <div class='mb-3'>
+        <a href='{% url "export_jars_to_excel" %}' class='btn btn-success'>Excel</a>
+    
+    </div>
 
     <table class='table table-bordered'>
         <thead>
@@ -21,7 +27,7 @@
                 <td>{{ jar.quantity_in_the_stock  }}</td>
                 <td>{{ jar.weighted_average_price|floatformat:2 }} DA</td>
                 <td>
-                    <ul>
+                    <ul class='scrollable-list'>
                     {% for batch in jar.jarbatch_set.all %}
                         <li>
                             Date: {{ batch.date_received }},
