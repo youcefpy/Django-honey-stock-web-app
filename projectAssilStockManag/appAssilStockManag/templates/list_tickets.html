@@ -36,7 +36,7 @@
                             <form action="{% url 'delete_ticket_batch' batch.id %}" method="post" onsubmit="return confirmDeleteBatch();">
                                 {% csrf_token %}
                                 <button class='btn btn-danger'>Supprimer</button>
-                            </form>  
+                            </form>     
                         </li>
                     {% endfor %}
                     </ul>

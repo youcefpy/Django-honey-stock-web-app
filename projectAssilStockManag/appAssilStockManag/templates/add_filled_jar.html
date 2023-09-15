@@ -8,26 +8,61 @@
   {% if messages %}
     <div class="messages">
         {% for message in messages %}
-        <div{% if message.tags %} class="{{ message.tags }}"{% endif %} style="color:red" >{{ message }}</div>
+            <div{% if message.tags %} class="{{ message.tags }}"{% endif %} style="color:red">{{ message }}</div>
         {% endfor %}
     </div>
   {% endif %}
 
   <form method="post" class='needs-validation' novalidate>
-
     {% csrf_token %}
-    {% for field in form  %}
+    {% for field in form %}
       <div class='form-group'>
-        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-        {{ field|add_class:"form-control" }}
-
+        
+        {% if field.name != "sku_id" %}
+          <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {% endif %}
+        
+        {% if field.name == "sku_code" %}
+            {{ field|add_class:"form-control sku-search" }}
+            <div id="skuDropdown" style="display:none; border: 1px solid #aaa; max-height: 200px; overflow-y: auto;"></div>
+        {% else %}
+            {{ field|add_class:"form-control" }}
+        {% endif %}
+    
         <div class="invalid-feedback">
           {{ field.errors|striptags }}
         </div>
       </div>
-    
-    {% endfor %}
+  {% endfor %}
+  
     <button type="submit" class='btn btn-success'>Validé</button>
   </form>
+  
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+      $(document).ready(function() {
+          $(".sku-search").on('input', function() {
+              const query = $(this).val();
+              if (query.length) {
+                  $.get('/api/skus/', { q: query }, function(data) {
+                      $("#skuDropdown").empty();
+                      data.forEach(sku => {
+                          $("#skuDropdown").append(`<div class="skuItem" data-id="${sku.id}">${sku.code}</div>`);
+                      });
+                      $("#skuDropdown").show();
+                  });
+              } else {
+                  $("#skuDropdown").hide();
+              }
+          });
 
+          $("#skuDropdown").on('click', '.skuItem', function() {
+              const selectedSku = $(this).text();
+              const selectedSkuId = $(this).data("id");
+              $(".sku-search").val(selectedSku);  // set visible input
+              $("input[name='sku_id']").val(selectedSkuId);  // set hidden input with SKU ID
+              $("#skuDropdown").hide();
+          });
+      });
+  </script>
 {% endblock %}

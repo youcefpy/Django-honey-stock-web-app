@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Default Title{% endblock %}</title>
-    
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">    
     <!-- Bootstrap CSS -->
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 
@@ -14,15 +15,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-
 </head>
+
 <body>
     <header>
         <div class='container-fluid'>
             <nav class="navbar navbar-expand-lg navbar-light bg-light">
                 <div class="container-fluid">
-                  <a class="navbar-brand" href="{% url 'main' %}">ASSIL STOCK</a>
+                  <a class="navbar-brand" href="{% url 'main' %}"><img src="{% static 'images/asil_logo.jpg' %}" width="70px" /></a>
                   <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarScroll" aria-controls="navbarScroll" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                   </button>
@@ -76,7 +76,9 @@
                       </li>
 
                      {% comment %} LIEN POUR LES ETTIQUETTE  {% endcomment %}
-
+                      <li class="nav-item">
+                        <a class="nav-link " aria-current="page" href="{% url 'add_sku' %}">Ajouter SKU</a>
+                      </li>
 
                     {% comment %} LIEN POUR LES BOCALES REMPLI PAR LE MIEL  {% endcomment %}
 
@@ -122,7 +124,7 @@
                         </ul>
                       </li>
 
-                    {% comment %} LIEN POUR LES BOCALES REMPLI PAR LE MIEL  {% endcomment %}
+                    {% comment %} LIEN POUR La Vente  {% endcomment %}
 
                     <li class="dropdown">
                       <a class="nav-link dropdown-toggle" dropdown-toggle href="#" id="dropdownMenuLink" role="button" data-toggle="dropdown" aria-expanded="false">
@@ -130,15 +132,14 @@
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
                           <li><a class="dropdown-item" href="{% url 'add_sell_filled_jars' %}">EFFECTUER UNE VENTE BOCAL</a></li>
-                          <li><a class="dropdown-item" href="#">EFFECTUER UNE VENTE COFFERT</a></li>
+                          <li><a class="dropdown-item" href="{% url 'add_sell_fill_box' %}">EFFECTUER UNE VENTE COFFERT</a></li>
                           <li><hr class="dropdown-divider"></li>
                           <li><a class="dropdown-item" href="{% url 'list_sell_jars' %}">LIST DES MIEL (POTS/CHAHDA) VENDU</a></li>
-                          <li><a class="dropdown-item" href="#">LIST DES COFFRETS (POTS/CHAHDA) VENDU</a></li>
+                          <li><a class="dropdown-item" href="{% url 'list_sell_boxes' %}">LIST DES COFFRETS VENDU</a></li>
                         </ul>
-                      </li>
+                    </li>
 
-                    {% comment %} LIEN POUR LES BOCALES REMPLI PAR LE MIEL  {% endcomment %}
-
+                    {% comment %} LIEN POUR La Vente {% endcomment %}
                     </ul>
                   </div>
                 </div>

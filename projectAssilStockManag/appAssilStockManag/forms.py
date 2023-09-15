@@ -55,9 +55,11 @@ class JarBatchForm(forms.ModelForm):
 
         
 class FilledJarForm(forms.ModelForm):
+    sku_code = forms.CharField(label='Sku', max_length=255, required=True)  # this is the search input
+    sku_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)  # hidden field to store SKU ID
     class Meta:
         model = FilledJar
-        fields = ['jar', 'product','sku', 'quantity_field']
+        fields = ['jar', 'product', 'quantity_field','sku_id']
         labels={
             'jar':'Bocal',
             'product':'Produit',
@@ -123,38 +125,40 @@ class BoxBatchForm(forms.ModelForm):
         }
 
 
-class FilledBoxForm(forms.ModelForm):
-    class Meta:
-        model = FilledBox
-        fields = ['box_type']
-        labels={
-            'type_box':'Type de Coffret',
-        }
 
 class FilledBoxForm(forms.ModelForm):
+    sku_code = forms.CharField(label='Sku', max_length=255, required=True)  # this is the search input
+    sku_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)  # hidden field to store SKU ID
     class Meta:
         model = FilledBox
-        fields = ['box_type','sku', 'quantity_fill_box']
+        fields = ['box_type','sku_id', 'quantity_fill_box']
         labels={
             'box_type':'Type de Coffret',
             'sku':'Sku',
             'quantity_fill_box':'Quantiter des coffret rempli',
         }
+    def clean(self):
+        cleaned_data = super().clean()
+        for field in self.data:
+            if '_' in field and '.' in field:
+                # You can add more validation here if needed.
+                cleaned_data[field] = self.data[field]
+        return cleaned_data
 
-    def __init__(self, *args, **kwargs):
-        super(FilledBoxForm, self).__init__(*args, **kwargs)
+    # def __init__(self, *args, **kwargs):
+    #     super(FilledBoxForm, self).__init__(*args, **kwargs)
         
-        for box_size, jars in BOX_CONFIG.items():
-            for (jar_size, jar_type) in jars:
-                field_name = f"{jar_type}_{jar_size}"
-                self.fields[field_name] = forms.IntegerField(
-                    required=True, 
-                    label=f"Quantiter pour {jar_type.capitalize()} ({jar_size} KG)", 
-                    initial=0,
-                    min_value=0,
-                    max_value=1,
-                    widget=forms.NumberInput()
-                )
+    #     for box_size, jars in BOX_CONFIG.items():
+    #         for (jar_size, jar_type) in jars:
+    #             field_name = f"{jar_type}_{jar_size}"
+    #             self.fields[field_name] = forms.IntegerField(
+    #                 required=True, 
+    #                 label=f"Quantiter pour {jar_type.capitalize()} ({jar_size} KG)", 
+    #                 initial=0,
+    #                 min_value=0,
+    #                 max_value=1,
+    #                 widget=forms.NumberInput()
+    #             )
 
 class SkuForm(forms.ModelForm):
     class Meta:
@@ -175,4 +179,10 @@ class SoldFilledBoxForm(forms.ModelForm):
     class Meta:
         model = SoldFilledBox
         fields = '__all__'
+        labels={
+            'filled_box':'TYPE COFFRET',
+            'quantity_sell_box':'QUANTITER',
+            'price_sell':'PRIX DE VENTE',
+
+        }
         

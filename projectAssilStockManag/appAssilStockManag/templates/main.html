@@ -1,15 +1,43 @@
 {% extends 'base.html' %}
-
 {% block title %}ACCEUIL{% endblock %}
 
 {% block content %}
+    <div class='d-flex div-group-two-canva' style='margin-bottom:2.5rem;'>
+        <div class='first-div-canva'>
+            <canvas id="honeyProductChart"></canvas>
+        </div>
+        <div class='second-div-canva'>
+            <canvas id ='JarChart'></canvas>
+        </div>
+       
+    </div>
+    {% comment %} <canvas id="honeyProductChart" width="400" height="200" style='margin-bottom:2.5rem;'></canvas> {% endcomment %}
+    {% comment %} <canvas id ='JarChart' style='margin-bottom:2.5rem;'></canvas> {% endcomment %}
+    <div class='d-flex div-group-two-canva' style='margin-bottom:2.5rem;'>
+        <div class='first-div-canva'>
+            <canvas id = 'ticketChart'></canvas>
+        </div>
+        <div class='second-div-canva'>
+            <canvas id='filledJarsChart'></canvas>
+        </div>
+    </div>
+    <div class='d-flex div-group-two-canva' style='margin-bottom:2.5rem;'>
+        <div class='first-div-canva'>
+            <canvas id = 'boxTypeChart'></canvas>
+        </div>
+        <div class='second-div-canva'>
+            <canvas id='filledBoxChart'></canvas>
+        </div>
+    </div>
 
-    <canvas id="honeyProductChart" width="400" height="200" style='margin-bottom:2.5rem;'></canvas>
-    <canvas id ='JarChart' style='margin-bottom:2.5rem;'></canvas>
-    <canvas id = 'ticketChart' width='400' height='200' style='margin-bottom:2.5rem;'></canvas>
-    <canvas id='filledJarsChart' width='400',height='200' style='margin-bottom:2.5rem;'></canvas>
-    <canvas id = 'boxTypeChart' width='400' height='200' style='margin-bottom:2.5rem;'></canvas>
-    <canvas id='filledBoxChart' width="400" height="200"></canvas>
+    <div class='d-flex div-group-two-canva' style='margin-bottom:2.5rem;'>
+        <div class='first-div-canva'>
+            <canvas id = 'SellFilledJarsChart'></canvas>
+        </div>
+        <div class='second-div-canva'>
+            <canvas id='SellFilledBoxChart'></canvas>
+        </div>
+    </div>
 
     {{ product_names|json_script:"product_names" }}
     {{ product_quantities|json_script:"product_quantities" }}
@@ -30,6 +58,12 @@
 
     {{ fill_box_type|json_script:"fill_box_type" }}
     {{ fill_box_quantity|json_script:"fill_box_quantity" }}
+
+    {{ sell_honey_jars_type|json_script:"sell_honey_jars_type" }}
+    {{ sell_honey_jars_quantity|json_script:"sell_honey_jars_quantity" }}
+
+    {{ sell_box_type|json_script:"sell_box_type" }}
+    {{ sell_box_quantity|json_script:"sell_box_quantity" }}
 
 
     <script>
@@ -226,7 +260,60 @@
         });
 
     </script>
+    {% comment %} SELL FILLED JARS SCRIPT {% endcomment %}
 
+    <script>
+        var sell_honey_jars_type = JSON.parse(document.getElementById("sell_honey_jars_type").textContent);
+        var sell_honey_jars_quantity = JSON.parse(document.getElementById("sell_honey_jars_quantity").textContent);
+        var ctx = document.getElementById('SellFilledJarsChart').getContext('2d');
+
+        var myChart= new Chart(ctx,{
+            type:"line",
+            data:{
+                labels:sell_honey_jars_type,
+                datasets:[{
+                    label:"VENTE BOCALS",
+                    data:sell_honey_jars_quantity,
+                }],
+            },
+            options:{
+                scales:{
+                    y:{
+                        beginAtZero:true,
+                    }
+                }
+            }
+        });
+    </script>
+
+    {% comment %} END SELL FILLED JARS SCRIPT {% endcomment %}
+
+
+
+    {% comment %} SELL BOX SCRIPT {% endcomment %}
+        <script>
+            var sell_box_type = JSON.parse(document.getElementById("sell_box_type").textContent);
+            var sell_box_quantity = JSON.parse(document.getElementById("sell_box_quantity").textContent);
+            var ctx = document.getElementById('SellFilledBoxChart').getContext('2d');
+            var myChart= new Chart(ctx,{
+                type:"line",
+                data:{
+                    labels:sell_box_type,
+                    datasets:[{
+                        label:"VENTE COFFRET",
+                        data:sell_box_quantity,
+                    }],
+                },
+                options:{
+                    scales:{
+                        y:{
+                            beginAtZero:true,
+                        }
+                    }
+                }
+            });
+        </script>
+    {% comment %} END SELL BOX SCRIPT {% endcomment %}
 
     
 {% endblock %}

@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
 from django.shortcuts import get_object_or_404
-from .models import Jar, HoneyProduct, FilledJar,ProductBatch,JarBatch,Ticket,TicketBatch,Box,BoxBatch,FilledBox,FilledBoxJars,SoldFilledJar,Sku
+from .models import Jar, HoneyProduct, FilledJar,ProductBatch,JarBatch,Ticket,TicketBatch,Box,BoxBatch,FilledBox,FilledBoxJars,SoldFilledJar,Sku,SoldFilledBox
 from django.db import transaction
-from .forms import HoneyProductForm, ProductBatchForm,JarForm, JarBatchForm, FilledJarForm,TicketForm,TicketBatchForm,BoxForm,BoxBatchForm,FilledBoxForm,SkuForm,SoldFilledJarForm,ProductBatchUpdateForm,SignUpForm
+from .forms import HoneyProductForm, ProductBatchForm,JarForm, JarBatchForm, FilledJarForm,TicketForm,TicketBatchForm,BoxForm,BoxBatchForm,FilledBoxForm,SkuForm,SoldFilledJarForm,ProductBatchUpdateForm,SignUpForm,SoldFilledBoxForm
 from django.db.models import Sum
 from .constants import BOX_CONFIG
 from django.db import IntegrityError
@@ -15,6 +15,7 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from django.http import HttpResponse
 from openpyxl.styles import Alignment,Font
+from django.http import JsonResponse
 
 
 def signup(request):
@@ -436,36 +437,39 @@ def delete_box_batch(request, batch_id):
 
     return redirect('list_box')
 
+
 @login_required
 def add_fill_box(request):
     if request.method == 'POST':
         form = FilledBoxForm(request.POST)
-        if form.is_valid():           
-            # Get the box type and its quantity
+        if form.is_valid():   
+            print(request.POST)        
+            # Extract required data
             box_type = form.cleaned_data['box_type']
             box_quantity = form.cleaned_data['quantity_fill_box']
-            print(f'the quantity of the boxes is : {box_quantity}')
 
             # Construct the filled_jars_data list
             filled_jars_data = []
             for field_name, jars_quantity in form.cleaned_data.items():
-                if '_' in field_name and '.' in field_name and jars_quantity > 0:
+                print(f"Field Name: {field_name}")
+                if '_' in field_name and '.' in field_name:
                     product_name, jar_size_str = field_name.rsplit('_', 1)
-                    jar_size_str = float(jar_size_str.rstrip(" KG)"))
-                    total_jars_needed = jars_quantity * box_quantity
-                    filled_jars_data.append((product_name, jar_size_str, total_jars_needed))
-            try : 
-
-                # Create the filled box
-                filled_box = FilledBox(box_type=box_type)    
-                # print("Initial FilledBox quantity:", filled_box.quantity_fill_box)
-                # Deduct the filled jars and boxes
-                filled_box = filled_box.fill(filled_jars_data, box_quantity)
-
+                    try:
+                        jar_size = float(jar_size_str.rstrip(" KG)"))
+                        total_jars_needed = jars_quantity * box_quantity
+                        filled_jars_data.append((product_name.replace('_', ' '), jar_size, total_jars_needed))
+                        
+                    except ValueError:
+                        continue
+            print(f"Constructed filled_jars_data: {filled_jars_data}")
+            
+            try: 
+                # Fill the box with the provided data
+                filled_box = FilledBox(box_type=box_type)
+                filled_box.fill(filled_jars_data, box_quantity)
             except ValueError as e:
-                messages.error(request,str(e))
+                messages.error(request, str(e))
                 return redirect('add_fill_box')
-
 
             return redirect('list_filled_jars')
     else:
@@ -553,6 +557,8 @@ def main(request):
     boxes = Box.objects.all()
     boxesFilled = FilledBox.objects.all()
     tickets = Ticket.objects.all()
+    sell_honey_jars = SoldFilledJar.objects.all()
+    sell_filled_boxes = SoldFilledBox.objects.all()
 
     #extraction the name and th quantity of the product 
     product_name= [product.name_product for product in products]
@@ -580,6 +586,13 @@ def main(request):
     fill_box_type = [str(boxFilled.box_type) for boxFilled in boxesFilled ]
     fill_box_quantity = [boxFilled.quantity_fill_box for boxFilled in boxesFilled]
 
+    #extraction of the quantity and the name and the size of the selled_jars
+    sell_honey_jars_type = [f"{sell_honey.sold_date.strftime('%Y-%m-%d')} {sell_honey.filled_jar.product} ({sell_honey.filled_jar.jar.size})" for sell_honey in sell_honey_jars]
+    sell_honey_jars_quantity = [sell_honey.quantity_sell_jars for sell_honey in sell_honey_jars]
+
+    sell_filled_boxes_type =[f"{box.filled_box.box_type}" for box in sell_filled_boxes]
+    sell_filled_boxes_quantity = [f"{box.quantity_sell_box}" for box in sell_filled_boxes]
+
     context = {
         'product_names': product_name,
         'product_quantities': product_quantity,
@@ -595,6 +608,11 @@ def main(request):
         'fill_box_quantity':fill_box_quantity,
         'ticket_type':ticket_type_prod,
         'ticket_quantity':ticket_quantity,
+        'sell_honey_jars_type':sell_honey_jars_type,
+        'sell_honey_jars_quantity':sell_honey_jars_quantity,
+        'sell_filled_boxes_type':sell_filled_boxes_type,
+        'sell_filled_boxes_quantity':sell_filled_boxes_quantity,
+
 
     }
     return render(request,'main.html',context)
@@ -637,6 +655,26 @@ def add_sell_fill_jars(request):
     return render(request,'add_sell_filled_jars.html',context)
 
 @login_required
+def add_sell_fill_box(request):
+    if request.method == "POST":
+        form = SoldFilledBoxForm(request.POST)
+        try:
+
+            if form.is_valid():
+                form.save()
+                return redirect('list_sell_boxes')
+        except ValueError as e:
+            messages.error(request,str(e))
+            
+    else : 
+        form = SoldFilledBoxForm()
+    
+    context={
+        'form':form,
+    }
+    return render(request,'add_sell_filled_box.html',context)
+
+@login_required
 def list_sell_jars(request):
     list_sell_jars =SoldFilledJar.objects.all()
     context={
@@ -644,6 +682,14 @@ def list_sell_jars(request):
     }
     return render(request,'list_sell_jars.html',context)
 
+
+@login_required
+def list_sell_boxes(request):
+    list_sell_box=SoldFilledBox.objects.all()
+    context={
+        'list_sell_box':list_sell_box
+    }
+    return render(request,'list_sell_boxes.html',context)
 
 def export_products_to_excel(request):
     wb = Workbook()
@@ -767,7 +813,7 @@ def export_boxes_to_excel(request):
     # Create a new Workbook
     wb = Workbook()
     ws = wb.active
-    ws.title = "Boxes"
+    ws.title = "Coffret"
 
     # Add headers to the Excel file
     headers = ['Type de coffret', 'Quantiter dans le Stoque', 'Price', 'Historique des achat/lot']
@@ -791,33 +837,61 @@ def export_boxes_to_excel(request):
     wb.save(response)
     return response
 
-
 def export_filled_boxes_excel(request):
-    # Create a new workbook and add a worksheet.
     wb = Workbook()
     ws = wb.active
     ws.title = "Coffret Rempli"
 
-    # Headers
-    headers = ["Type Coffret", "Bocal Dans Coffret", "Quantiter"]
-    for idx, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=idx, value=header)
-        cell.font = Font(bold=True)
-        cell.alignment = Alignment(horizontal="center")
-
-    filled_boxes = FilledBox.objects.all()
+    # Add headers to the Excel file
+    headers = ['Type de coffret', 'Bocal Dans Coffret', 'Quantiter']
+    for col_num, header in enumerate(headers, 1):
+        col_letter = get_column_letter(col_num)
+        ws[f'{col_letter}1'] = header
+        ws[f'{col_letter}1'].font = Font(bold=True)
     
-    # This assumes that you've created a logic for 'result' similar to what's used in the template
-    result = []  # Implement logic here
+    for idx, box in enumerate(FilledBox.objects.all(), 2):
+        ws.cell(row=idx, column=1, value=str(box.box_type))
+        ws.cell(row=idx, column=3, value=f"{box.quantity_fill_box:.2f} DA")
 
-    for idx, box in enumerate(result, 2):
-        ws.cell(row=idx, column=1, value=box.box_type)
-        ws.cell(row=idx, column=2, value=box.jars_inside)
-        ws.cell(row=idx, column=3, value=box.quantity)
-
-    # Set the content type and headers for the response.
-    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    response['Content-Disposition'] = "attachment; filename=Coffret_Rempli.xlsx"
+    # Serve the Excel file to the user
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename=coffret_rempli.xlsx'
     wb.save(response)
-
     return response
+
+
+def sku_search(request):
+    q = request.GET.get('q', '')
+    skus = Sku.objects.filter(code__icontains=q).values('id', 'code')
+    return JsonResponse(list(skus), safe=False)
+
+
+def get_jars(request):
+    box_type_id = request.GET.get('box_type')
+    box_type_obj = Box.objects.get(pk=box_type_id)
+    box_type_value = box_type_obj.type_box
+
+    if box_type_value in ['coffret 3500', 'coffret 4000', 'coffret 4500']:
+        num_jars = 4
+        filled_jars = FilledJar.objects.filter(jar__size__lte=0.25)
+    else:
+        num_jars = 6
+        filled_jars = FilledJar.objects.all()
+
+    jar_data = []
+    for jar in filled_jars:
+        jar_data.append({
+            'id': jar.pk,
+            'name': jar.product.name_product,
+            'size': jar.size
+        })
+
+    response_data = {
+        'num_jars': num_jars,
+        'filled_jars': jar_data
+    }
+    print(response_data)
+    # print(f"Box Type Requested: {box_type}")
+    print(f"Jars Returned: {filled_jars}")
+
+    return JsonResponse(response_data)

@@ -112,8 +112,7 @@ class FilledJar(models.Model):
     quantity_field= models.PositiveBigIntegerField()
     filled_date = models.DateField(auto_now_add=True)
     size = models.DecimalField(max_digits=5, decimal_places=3)
-    sku = models.ForeignKey(Sku,on_delete=models.CASCADE)
-
+    sku = models.ForeignKey(Sku,on_delete=models.CASCADE,null=True, blank=True)
 
     def save(self, update_stock=False, *args, **kwargs):
         if  update_stock:
@@ -259,43 +258,58 @@ class FilledBox(models.Model):
     jars_signature = models.CharField(max_length=255, blank=True, null=True)
     sku = models.ForeignKey(Sku,on_delete=models.CASCADE,null=True,blank=True)
 
+    @transaction.atomic
     def fill(self, filled_jars_data, box_quantity):
+        # Calculate the jars signature
         jars_signature = "-".join(sorted([f"{product_name}-{jar_size}" for product_name, jar_size, _ in filled_jars_data]))
         similar_filled_box = FilledBox.objects.filter(box_type=self.box_type, jars_signature=jars_signature).first()
         
         if similar_filled_box:
+            # Increment the quantity if similar box exists
             similar_filled_box.quantity_fill_box += box_quantity
             similar_filled_box.save()
-            # Use the existing box for subsequent operations
             box_for_operations = similar_filled_box
         else:
+            # Create new record if not exists
             self.jars_signature = jars_signature
             self.quantity_fill_box = box_quantity
             self.save()
-            # Use the current instance for subsequent operations
             box_for_operations = self
 
-        # Now, we know box_for_operations is saved in the database and has a valid id.
         # Deduct jars from the FilledJar model and associate with FilledBox
         for product_name, jar_size, total_jars_needed in filled_jars_data:
+            print(f"Loop runs for {product_name} {jar_size}KG")
             try:
                 filled_jar = FilledJar.objects.get(jar__size=jar_size, product__name_product=product_name)
+                print(f"Found {product_name} {jar_size}KG with quantity {filled_jar.quantity_field}")
+                filled_jar.quantity_field = int(filled_jar.quantity_field)
+                total_jars_needed = int(total_jars_needed)
+                # Ensure we have enough stock in FilledJars
+                if filled_jar.quantity_field < total_jars_needed:
+                    print(type(filled_jar.quantity_field), filled_jar.quantity_field)
+                    print(type(total_jars_needed), total_jars_needed)
+                    raise ValueError(f"Not enough {product_name} jars of size {jar_size} KG in stock to fill the boxes.")
+                
+                # Decrease from filled jar stock
+                filled_jar.quantity_field -= total_jars_needed
+                filled_jar.save()
+
+                # Associate jar with box
+                filled_box_jar, _ = FilledBoxJars.objects.get_or_create(box=box_for_operations, jar=filled_jar)
+                filled_box_jar.quantity = total_jars_needed
+                filled_box_jar.save()
+                
+                print(f"Decreasing stock for {product_name} {jar_size}KG jars")
+                print(f"Current Stock: {filled_jar.quantity_field}")
+                print(f"Jars Needed: {total_jars_needed}")
+                print(f"Stock After Deduction: {filled_jar.quantity_field - total_jars_needed}")
+
             except FilledJar.DoesNotExist:
+                print(f"Failed to get {product_name} {jar_size}KG")
                 raise ValueError(f"No {product_name} jars of size {jar_size} KG in stock.")
-            
-            if filled_jar.quantity_field < total_jars_needed:
-                raise ValueError(f"Not enough {product_name} jars of size {jar_size} KG in stock to fill the boxes.")
-            
-            filled_jar.quantity_field -= total_jars_needed
-            filled_jar.save()
-
-            # Using the ManyToMany relationship through the intermediary model
-            filled_box_jar = FilledBoxJars(box=box_for_operations, jar=filled_jar, quantity=total_jars_needed)
-            filled_box_jar.save()        
-
-        print("Box quantity:", box_quantity)
+        
+        # Decrease box from the stock
         self.box_type.quantity_in_stock -= box_quantity
-    
         self.box_type.save()
 
     def __str__(self):
@@ -334,8 +348,11 @@ class SoldFilledBox(models.Model):
         return self.quantity_sell_box * self.price_sell
     
     def save(self,*args,**kwargs):
-        super(SoldFilledBox, self).save(*args, **kwargs)  # Call the "real" save() method.
+        if self.filled_box.quantity_fill_box >= self.quantity_sell_box:
+            super(SoldFilledBox, self).save(*args, **kwargs)  # Call the "real" save() method.
 
-        #decrease the quantity of filled_jars : 
-        self.filled_box.quantity_fill_box -= self.quantity_sell_box
-        self.filled_box.save()
+            #decrease the quantity of filled_jars : 
+            self.filled_box.quantity_fill_box -= self.quantity_sell_box
+            self.filled_box.save()
+        else : 
+            raise ValueError("Pas Assez de coffret rempli dans le stock")
