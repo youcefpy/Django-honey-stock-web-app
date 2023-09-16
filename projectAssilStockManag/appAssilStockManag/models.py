@@ -278,16 +278,16 @@ class FilledBox(models.Model):
 
         # Deduct jars from the FilledJar model and associate with FilledBox
         for product_name, jar_size, total_jars_needed in filled_jars_data:
-            print(f"Loop runs for {product_name} {jar_size}KG")
             try:
                 filled_jar = FilledJar.objects.get(jar__size=jar_size, product__name_product=product_name)
-                print(f"Found {product_name} {jar_size}KG with quantity {filled_jar.quantity_field}")
-                filled_jar.quantity_field = int(filled_jar.quantity_field)
+                # filled_jar.quantity_field = int(filled_jar.quantity_field)
                 total_jars_needed = int(total_jars_needed)
                 # Ensure we have enough stock in FilledJars
+
+                print(f"Available {product_name} jars of size {jar_size}KG: {filled_jar.quantity_field}")
+                print(f"Total jars needed: {total_jars_needed}")
+
                 if filled_jar.quantity_field < total_jars_needed:
-                    print(type(filled_jar.quantity_field), filled_jar.quantity_field)
-                    print(type(total_jars_needed), total_jars_needed)
                     raise ValueError(f"Not enough {product_name} jars of size {jar_size} KG in stock to fill the boxes.")
                 
                 # Decrease from filled jar stock
@@ -299,13 +299,7 @@ class FilledBox(models.Model):
                 filled_box_jar.quantity = total_jars_needed
                 filled_box_jar.save()
                 
-                print(f"Decreasing stock for {product_name} {jar_size}KG jars")
-                print(f"Current Stock: {filled_jar.quantity_field}")
-                print(f"Jars Needed: {total_jars_needed}")
-                print(f"Stock After Deduction: {filled_jar.quantity_field - total_jars_needed}")
-
             except FilledJar.DoesNotExist:
-                print(f"Failed to get {product_name} {jar_size}KG")
                 raise ValueError(f"No {product_name} jars of size {jar_size} KG in stock.")
         
         # Decrease box from the stock

@@ -446,21 +446,25 @@ def add_fill_box(request):
             print(request.POST)        
             # Extract required data
             box_type = form.cleaned_data['box_type']
-            box_quantity = form.cleaned_data['quantity_fill_box']
+            box_quantity = int(form.cleaned_data['quantity_fill_box'])
+
 
             # Construct the filled_jars_data list
             filled_jars_data = []
             for field_name, jars_quantity in form.cleaned_data.items():
                 print(f"Field Name: {field_name}")
-                if '_' in field_name and '.' in field_name:
-                    product_name, jar_size_str = field_name.rsplit('_', 1)
-                    try:
-                        jar_size = float(jar_size_str.rstrip(" KG)"))
-                        total_jars_needed = jars_quantity * box_quantity
-                        filled_jars_data.append((product_name.replace('_', ' '), jar_size, total_jars_needed))
-                        
-                    except ValueError:
-                        continue
+                print(f"Jars Quantity : {jars_quantity}")
+                if '_' in field_name:  # Only check for underscore
+                    parts = field_name.rsplit('_', 1)
+                    if len(parts) == 2:  # Ensure it has two parts
+                        product_name, jar_size_str = parts
+                        try:
+                            jar_size = float(jar_size_str.rstrip(" KG)"))
+                            total_jars_needed = 1 * box_quantity
+                            filled_jars_data.append((product_name.replace('_', ' '), jar_size, total_jars_needed))
+                            
+                        except ValueError:
+                            continue
             print(f"Constructed filled_jars_data: {filled_jars_data}")
             
             try: 
