@@ -30,7 +30,7 @@
                 <td>
                     <form method='post' action="{% url 'delete_filled_jar' jar_info.id %}">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this item?');">Supprimer</button>
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Est ce que vous ete sur vous voulez supprimer le produit?');">Supprimer</button>
                     </form>
                     
                 </td>

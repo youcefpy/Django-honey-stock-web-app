@@ -41,3 +41,49 @@ BOX_CONFIG = {
         (0.01, 'propolis'),
     },
 }
+
+BOX_STANDARD = {
+    'coffret 3500' : {
+        'standard 1' : [
+            [0.2,'Miel kalitus'],
+            [0.2,'Miel djerdjir'],
+            [0.2,'Miel djabali'],
+        ],
+        'stnadard 2':[
+            [0.2,'Miel marar'],
+            [0.2,'Miel djerdjir'],
+            [0.2,'Miel djabali'],
+        ]
+        
+    },
+    'coffret 4000' : {
+        'standard 1' : [
+            [0.20,'Miel kalitus'],
+            [0.20,'Miel djerdjir'],
+            [0.20,'Miel djabali'],
+            [0.01,'propolis'],
+        ],
+        'stnadard 2':[
+            [0.20,'Miel marar'],
+            [0.20,'Miel djerdjir'],
+            [0.20,'Miel djabali'],
+            [0.01,'propolis'],
+        ]
+        
+    },
+      'coffret 4500' : {
+        'standard 1' : [
+            [0.25,'Miel kalitus'],
+            [0.25,'Miel djerdjir'],
+            [0.25,'Miel djabali'],
+           [ 0.01,'propolis'],
+        ],
+        'stnadard 2':[
+            [0.25,'Miel marar'],
+            [0.25,'Miel djerdjir'],
+            [0.25,'Miel djabali'],
+            [0.01,'propolis'],
+        ]
+        
+    },
+}

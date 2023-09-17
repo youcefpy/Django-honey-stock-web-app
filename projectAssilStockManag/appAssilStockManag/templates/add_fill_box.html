@@ -28,6 +28,11 @@
             <div id="skuDropdown" style="display:none; border: 1px solid #aaa; max-height: 200px; overflow-y: auto;"></div>
         {% elif field.name == "box_type" %}
             {{ field|add_class:"form-control"|attr:"onchange=updateJars();" }}
+
+            <div id="standardsDiv">
+              <!-- Radio buttons for standards will be appended here by JavaScript -->
+            </div>
+          
             <div id="honey_selects">
                 <!-- Honey selects will be appended here by JavaScript -->
             </div>
@@ -72,42 +77,104 @@
       });
   </script>
 <script>
+  var boxTypeMapping = {
+    '1': 'coffret 3500',
+    '2': 'coffret 4000',
+    '3': 'coffret 4500'
+  };
   function updateJars() {
+   
     var boxType = document.getElementById('id_box_type').value;
     var honeyDiv = document.getElementById('honey_selects');
-    
+    var standardsDiv = document.getElementById('standardsDiv');
+    var BOX_STANDARD = JSON.parse('{{ BOX_STANDARD_JSON|safe }}');
+
     // Clear existing selects
     honeyDiv.innerHTML = '';
-    console.log("Box type changed");
+    standardsDiv.innerHTML = '';
     
-    fetch('/get_jars/?box_type=' + boxType)
-        .then(response => response.json())
-        .then(data => {
-            var numSelects = data.num_jars;
-            var jars = data.filled_jars;
-            
-            for (var i = 0; i < numSelects; i++) {
-                var label = document.createElement('label');
-                label.textContent = 'Miel' + (i+1);
-                label.classList.add('d-block', 'mb-1')
-                honeyDiv.appendChild(label);
+    // Populate standards for the selected box type
+    // This uses your BOX_STANDARD dictionary (you might need to pass it to the template or use an API endpoint)
+    var boxTypeKey = boxTypeMapping[boxType];
+    var standards = BOX_STANDARD[boxTypeKey];
+    console.log('Box Type:', boxType);
+    console.log('Standards:', standards);
     
-                var select = document.createElement('select');
-                select.name = jars[i].name.replace(' ', '_') + '_' + jars[i].size;
-                select.classList.add('form-control', 'mb-2');
-                select.classList.add('mt-1');
-    
-                jars.forEach(jar => {
-                    var option = document.createElement('option');
-                    option.value = jar.id;
-                    option.textContent = jar.name + ' (' + jar.size + ' KG)';
-                    select.appendChild(option);
-                });
-    
-                honeyDiv.appendChild(select);
-                honeyDiv.appendChild(document.createElement('br'));
-            }
-        });
+    if (standards) {
+        for (var standard in standards) {
+          var div = document.createElement('div');
+          div.className = 'custom-control custom-radio mb-2 mt-1';
+          
+          var radio = document.createElement('input');
+          radio.type = "radio";
+          radio.name = "selected_standard";
+          radio.value = standard;
+          radio.className = 'custom-control-input mb-3';
+          radio.id = 'radio_' + standard;
+          radio.onchange = function() { honeyDiv.style.display = 'none'; };
+          div.appendChild(radio);
+          
+          var label = document.createElement('label');
+          label.className = 'custom-control-label';
+          label.setAttribute('for', 'radio_' + standard);
+          var standardConfigText = standards[standard].map(item => `${item[1]} ${item[0]} KG`).join(', ');
+          label.textContent = `${standard} (${standardConfigText})`;
+          div.appendChild(label);
+          
+          standardsDiv.appendChild(div);
+        }
+        
+        var div = document.createElement('div');
+        div.className = 'custom-control custom-radio';
+
+        var radio = document.createElement('input');
+        radio.type = "radio";
+        radio.name = "selected_standard";
+        radio.value = "";
+        radio.className = 'custom-control-input';
+        radio.id = 'radio_manual';
+        radio.checked = true;
+        radio.onchange = function() { honeyDiv.style.display = 'block'; };
+        div.appendChild(radio);
+
+        var label = document.createElement('label');
+        label.className = 'custom-control-label';
+        label.setAttribute('for', 'radio_manual');
+        label.textContent = "Sélectionner manuellement";
+        div.appendChild(label);
+
+        standardsDiv.appendChild(div);
     }
+
+    if (boxType){
+      fetch('/get_jars/?box_type=' + boxType)
+      .then(response => response.json())
+      .then(data => {
+          var jars = data.filled_jars;
+          
+          jars.forEach((jar, index) => {
+              var label = document.createElement('label');
+              label.textContent = jar.name;
+              label.classList.add('d-block', 'mb-1')
+              honeyDiv.appendChild(label);
+  
+              var select = document.createElement('select');
+              select.name = 'jar_' + index;  // Using indexed naming
+              select.classList.add('form-control', 'mb-2', 'mt-1');
+  
+              jars.forEach(jarOption => {
+                  var option = document.createElement('option');
+                  option.value = jarOption.id;
+                  option.textContent = jarOption.name + ' (' + jarOption.size + ' KG)';
+                  select.appendChild(option);
+              });
+  
+              honeyDiv.appendChild(select);
+              honeyDiv.appendChild(document.createElement('br'));
+          });
+      }); 
+    }     
+  }
+window.onload = updateJars;
 </script>
 {% endblock %}

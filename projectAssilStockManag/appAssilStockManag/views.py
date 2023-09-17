@@ -4,7 +4,7 @@ from .models import Jar, HoneyProduct, FilledJar,ProductBatch,JarBatch,Ticket,Ti
 from django.db import transaction
 from .forms import HoneyProductForm, ProductBatchForm,JarForm, JarBatchForm, FilledJarForm,TicketForm,TicketBatchForm,BoxForm,BoxBatchForm,FilledBoxForm,SkuForm,SoldFilledJarForm,ProductBatchUpdateForm,SignUpForm,SoldFilledBoxForm
 from django.db.models import Sum
-from .constants import BOX_CONFIG
+from .constants import BOX_CONFIG, BOX_STANDARD
 from django.db import IntegrityError
 from django.contrib import messages
 from decimal import Decimal
@@ -16,6 +16,7 @@ from openpyxl.utils import get_column_letter
 from django.http import HttpResponse
 from openpyxl.styles import Alignment,Font
 from django.http import JsonResponse
+import json
 
 
 def signup(request):
@@ -440,33 +441,42 @@ def delete_box_batch(request, batch_id):
 
 @login_required
 def add_fill_box(request):
+    
     if request.method == 'POST':
         form = FilledBoxForm(request.POST)
         if form.is_valid():   
             print(request.POST)        
             # Extract required data
-            box_type = form.cleaned_data['box_type']
+            box_type = form.cleaned_data['box_type'].name
             box_quantity = int(form.cleaned_data['quantity_fill_box'])
-
-
-            # Construct the filled_jars_data list
             filled_jars_data = []
-            for field_name, jars_quantity in form.cleaned_data.items():
-                print(f"Field Name: {field_name}")
-                print(f"Jars Quantity : {jars_quantity}")
-                if '_' in field_name:  # Only check for underscore
-                    parts = field_name.rsplit('_', 1)
-                    if len(parts) == 2:  # Ensure it has two parts
-                        product_name, jar_size_str = parts
+            # Check if a standard is selected
+            selected_standard = request.POST.get('selected_standard')
+
+            # If a standard is selected, fetch data from BOX_STANDARD
+            if selected_standard : 
+                filled_jars_data= [
+                (product_name, size, 1 * box_quantity)
+                for size, product_name in BOX_STANDARD.get(box_type, {}).get(selected_standard, {})
+            ]
+            # Construct the filled_jars_data list
+            else : 
+                for key, value in request.POST.items():
+                    if key.startswith('jar_'):
                         try:
-                            jar_size = float(jar_size_str.rstrip(" KG)"))
-                            total_jars_needed = 1 * box_quantity
-                            filled_jars_data.append((product_name.replace('_', ' '), jar_size, total_jars_needed))
+                            # Convert the value to integer and fetch the jar by its ID
+                            jar_id = int(value)
+                            selected_jar = FilledJar.objects.get(pk=jar_id)
                             
-                        except ValueError:
-                            continue
-            print(f"Constructed filled_jars_data: {filled_jars_data}")
-            
+                            product_name = selected_jar.product.name_product
+                            jar_size = selected_jar.size
+                            
+                            # Calculate the total jars needed
+                            total_jars_needed = 1 * box_quantity
+                            filled_jars_data.append((product_name, jar_size, total_jars_needed))
+                            
+                        except (ValueError):
+                            continue            
             try: 
                 # Fill the box with the provided data
                 filled_box = FilledBox(box_type=box_type)
@@ -478,8 +488,12 @@ def add_fill_box(request):
             return redirect('list_filled_jars')
     else:
         form = FilledBoxForm()
+    context = {
+        'form': form,
+        'BOX_STANDARD_JSON': json.dumps(BOX_STANDARD) 
+    }
 
-    return render(request, 'add_fill_box.html', {'form': form})
+    return render(request, 'add_fill_box.html',context )
 
 
 @login_required
@@ -871,10 +885,16 @@ def sku_search(request):
 
 
 def get_jars(request):
+    
     box_type_id = request.GET.get('box_type')
-    box_type_obj = Box.objects.get(pk=box_type_id)
+    if not box_type_id:
+        return JsonResponse({'error': 'Invalid box type ID'}, status=400)
+    try:
+        box_type_obj = Box.objects.get(pk=box_type_id)
+    except Box.DoesNotExist:
+        return JsonResponse({'error': 'Box type not found'}, status=404)
     box_type_value = box_type_obj.type_box
-
+    
     if box_type_value in ['coffret 3500', 'coffret 4000', 'coffret 4500']:
         num_jars = 4
         filled_jars = FilledJar.objects.filter(jar__size__lte=0.25)

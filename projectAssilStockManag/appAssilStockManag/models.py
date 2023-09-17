@@ -303,7 +303,7 @@ class FilledBox(models.Model):
                 raise ValueError(f"No {product_name} jars of size {jar_size} KG in stock.")
         
         # Decrease box from the stock
-        self.box_type.quantity_in_stock -= box_quantity
+        self.box_type. quantity_in_stock -= box_quantity
         self.box_type.save()
 
     def __str__(self):
@@ -350,3 +350,9 @@ class SoldFilledBox(models.Model):
             self.filled_box.save()
         else : 
             raise ValueError("Pas Assez de coffret rempli dans le stock")
+        
+
+class BoxStandard(models.Model):
+    type_box = models.ForeignKey(Box,on_delete=models.CASCADE)
+    standard_number = models.PositiveBigIntegerField()
+    filled_jars= models.ManyToManyField(FilledJar)

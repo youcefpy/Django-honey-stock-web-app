@@ -64,7 +64,7 @@
                 </td>                
                 <td>
                     {% if box.box_id %}
-                        <form action="{% url 'delete_filled_box' box.box_id %}" method="post" onsubmit="return confirmDeleteBatch();">
+                        <form action="{% url 'delete_filled_box' box.box_id %}" method="post" onsubmit="return confirmDelete();">
                             {% csrf_token %}
                             <button class='btn btn-danger'>Supprimer</button>
                         </form>  
@@ -75,6 +75,12 @@
     </tbody>
 </table>
 
+
+<script>
+    function confirmDelete() {
+        return confirm("Voulez-vous vraiment supprimer les coffret rempli ?");
+    }
+</script>
 
 
 
