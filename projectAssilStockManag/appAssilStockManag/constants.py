@@ -49,7 +49,7 @@ BOX_STANDARD = {
             [0.2,'Miel djerdjir'],
             [0.2,'Miel djabali'],
         ],
-        'stnadard 2':[
+        'standard 2':[
             [0.2,'Miel marar'],
             [0.2,'Miel djerdjir'],
             [0.2,'Miel djabali'],
@@ -63,7 +63,7 @@ BOX_STANDARD = {
             [0.20,'Miel djabali'],
             [0.01,'propolis'],
         ],
-        'stnadard 2':[
+        'standard 2':[
             [0.20,'Miel marar'],
             [0.20,'Miel djerdjir'],
             [0.20,'Miel djabali'],
@@ -78,7 +78,7 @@ BOX_STANDARD = {
             [0.25,'Miel djabali'],
            [ 0.01,'propolis'],
         ],
-        'stnadard 2':[
+        'standard 2':[
             [0.25,'Miel marar'],
             [0.25,'Miel djerdjir'],
             [0.25,'Miel djabali'],
@@ -87,3 +87,9 @@ BOX_STANDARD = {
         
     },
 }
+BOX_TYPE_MAPPING = {
+    '1': 'coffret 3500',
+    '2': 'coffret 4000',
+    '3': 'coffret 8500',
+    '4': 'coffret 9900'
+  };

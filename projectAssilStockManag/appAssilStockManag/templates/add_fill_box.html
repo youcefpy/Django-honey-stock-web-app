@@ -77,10 +77,11 @@
       });
   </script>
 <script>
-  var boxTypeMapping = {
+  const BOX_TYPE_MAPPING = {
     '1': 'coffret 3500',
     '2': 'coffret 4000',
-    '3': 'coffret 4500',
+    '3': 'coffret 8500',
+    '4': 'coffret 9900'
   };
   function updateJars() {
    
@@ -88,6 +89,7 @@
     var honeyDiv = document.getElementById('honey_selects');
     var standardsDiv = document.getElementById('standardsDiv');
     var BOX_STANDARD = JSON.parse('{{ BOX_STANDARD_JSON|safe }}');
+    const BOX_TYPE_MAPPING = JSON.parse('{{ BOX_TYPE_MAPPING_JSON|safe }}');
 
     // Clear existing selects
     honeyDiv.innerHTML = '';
@@ -95,7 +97,7 @@
     
     // Populate standards for the selected box type
     // This uses your BOX_STANDARD dictionary (you might need to pass it to the template or use an API endpoint)
-    var boxTypeKey = boxTypeMapping[boxType];
+    var boxTypeKey = BOX_TYPE_MAPPING[boxType];
     var standards = BOX_STANDARD[boxTypeKey];
     console.log('Box Type:', boxType);
     console.log('Standards:', standards);

@@ -4,7 +4,7 @@ from .models import Jar, HoneyProduct, FilledJar,ProductBatch,JarBatch,Ticket,Ti
 from django.db import transaction
 from .forms import HoneyProductForm, ProductBatchForm,JarForm, JarBatchForm, FilledJarForm,TicketForm,TicketBatchForm,BoxForm,BoxBatchForm,FilledBoxForm,SkuForm,SoldFilledJarForm,ProductBatchUpdateForm,SignUpForm,SoldFilledBoxForm
 from django.db.models import Sum
-from .constants import BOX_CONFIG, BOX_STANDARD
+from .constants import BOX_CONFIG, BOX_STANDARD,BOX_TYPE_MAPPING
 from django.db import IntegrityError
 from django.contrib import messages
 from decimal import Decimal
@@ -454,11 +454,17 @@ def add_fill_box(request):
             selected_standard = request.POST.get('selected_standard')
 
             # If a standard is selected, fetch data from BOX_STANDARD
-            if selected_standard : 
+            if selected_standard :
+                box_type_id = request.POST.get('box_type') 
+                box_type = Box.objects.get(pk=box_type_id)
+                print(f"Received box_type from form: {box_type}")
+                box_type_str = BOX_TYPE_MAPPING.get(box_type)
+                print(f"box_type_str after mapping: {box_type_str}")
                 print(f"selected standard declanched : {selected_standard}")            
-                selected_data = BOX_STANDARD.get(box_type, {}).get(selected_standard, [])
+                selected_data = BOX_STANDARD.get(box_type_str, {}).get(selected_standard, [])
                 print(f"BOX_STANDARD: {BOX_STANDARD}")
-                print(f"BOX_STANDARD for box_type {box_type}: {BOX_STANDARD.get(box_type, {})}")
+                print(f"BOX_STANDARD for box_type_str {box_type_str}: {BOX_STANDARD.get(box_type_str, {})}")
+                print(f"Selected data for {box_type_str} and {selected_standard}: {selected_data}")
                 filled_jars_data = [
                     (product_name, size, 1 * box_quantity)
                     for size, product_name in selected_data
@@ -466,7 +472,7 @@ def add_fill_box(request):
                 print(f"Filled jars Data  : {filled_jars_data}")
                 # Now, let's update the FilledJars
                 for product_name, size, qty in filled_jars_data:
-                    jar = FilledJar.objects.filter(product_name=product_name, size=size).first()
+                    jar = FilledJar.objects.filter(product__name_product=product_name, size=size).first()
                     if jar:
                         jar.quantity_field -= qty
                         jar.save()
@@ -513,10 +519,11 @@ def add_fill_box(request):
         form = FilledBoxForm()
     context = {
         'form': form,
-        'BOX_STANDARD_JSON': json.dumps(BOX_STANDARD) 
+        'BOX_STANDARD_JSON': json.dumps(BOX_STANDARD) ,
+        'BOX_TYPE_MAPPING_JSON': json.dumps(BOX_TYPE_MAPPING) 
     }
 
-    return render(request, 'add_fill_box.html',context )
+    return render(request, 'add_fill_box.html',context)
 
 
 @login_required
