@@ -80,7 +80,7 @@
   var boxTypeMapping = {
     '1': 'coffret 3500',
     '2': 'coffret 4000',
-    '3': 'coffret 4500'
+    '3': 'coffret 4500',
   };
   function updateJars() {
    
@@ -146,34 +146,36 @@
         standardsDiv.appendChild(div);
     }
 
-    if (boxType){
+    if (boxType) {
       fetch('/get_jars/?box_type=' + boxType)
-      .then(response => response.json())
-      .then(data => {
-          var jars = data.filled_jars;
-          
-          jars.forEach((jar, index) => {
-              var label = document.createElement('label');
-              label.textContent = jar.name;
-              label.classList.add('d-block', 'mb-1')
-              honeyDiv.appendChild(label);
-  
-              var select = document.createElement('select');
-              select.name = 'jar_' + index;  // Using indexed naming
-              select.classList.add('form-control', 'mb-2', 'mt-1');
-  
-              jars.forEach(jarOption => {
-                  var option = document.createElement('option');
-                  option.value = jarOption.id;
-                  option.textContent = jarOption.name + ' (' + jarOption.size + ' KG)';
-                  select.appendChild(option);
-              });
-  
-              honeyDiv.appendChild(select);
-              honeyDiv.appendChild(document.createElement('br'));
+          .then(response => response.json())
+          .then(data => {
+              var jars = data.filled_jars;
+              var num_jars = data.num_jars;
+
+              // Now use num_jars for rendering the dropdowns.
+              for (var i = 0; i < num_jars; i++) {
+                  var label = document.createElement('label');
+                  label.textContent = "Miel" + i;
+                  label.classList.add('d-block', 'mb-1')
+                  honeyDiv.appendChild(label);
+    
+                  var select = document.createElement('select');
+                  select.name = 'Miel' + i;  // Using indexed naming
+                  select.classList.add('form-control', 'mb-2', 'mt-1');
+    
+                  jars.forEach(jarOption => {
+                      var option = document.createElement('option');
+                      option.value = jarOption.id;
+                      option.textContent = jarOption.name + ' (' + jarOption.size + ' KG)';
+                      select.appendChild(option);
+                  });
+    
+                  honeyDiv.appendChild(select);
+                  honeyDiv.appendChild(document.createElement('br'));
+              }
           });
-      }); 
-    }     
+      }     
   }
 window.onload = updateJars;
 </script>

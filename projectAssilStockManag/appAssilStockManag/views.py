@@ -441,13 +441,13 @@ def delete_box_batch(request, batch_id):
 
 @login_required
 def add_fill_box(request):
-    
+    jars_dict ={}
     if request.method == 'POST':
         form = FilledBoxForm(request.POST)
         if form.is_valid():   
             print(request.POST)        
             # Extract required data
-            box_type = form.cleaned_data['box_type'].name
+            box_type = form.cleaned_data['box_type']
             box_quantity = int(form.cleaned_data['quantity_fill_box'])
             filled_jars_data = []
             # Check if a standard is selected
@@ -455,28 +455,51 @@ def add_fill_box(request):
 
             # If a standard is selected, fetch data from BOX_STANDARD
             if selected_standard : 
-                filled_jars_data= [
-                (product_name, size, 1 * box_quantity)
-                for size, product_name in BOX_STANDARD.get(box_type, {}).get(selected_standard, {})
-            ]
-            # Construct the filled_jars_data list
+                print(f"selected standard declanched : {selected_standard}")            
+                selected_data = BOX_STANDARD.get(box_type, {}).get(selected_standard, [])
+                print(f"BOX_STANDARD: {BOX_STANDARD}")
+                print(f"BOX_STANDARD for box_type {box_type}: {BOX_STANDARD.get(box_type, {})}")
+                filled_jars_data = [
+                    (product_name, size, 1 * box_quantity)
+                    for size, product_name in selected_data
+                ]
+                print(f"Filled jars Data  : {filled_jars_data}")
+                # Now, let's update the FilledJars
+                for product_name, size, qty in filled_jars_data:
+                    jar = FilledJar.objects.filter(product_name=product_name, size=size).first()
+                    if jar:
+                        jar.quantity_field -= qty
+                        jar.save()
+                        # Construct the filled_jars_data list
+                    print(f"filled jars quantity decreased from the filled jars model : {jar.quantity_field}")
             else : 
                 for key, value in request.POST.items():
-                    if key.startswith('jar_'):
+                    if "Miel" in key:
                         try:
                             # Convert the value to integer and fetch the jar by its ID
                             jar_id = int(value)
                             selected_jar = FilledJar.objects.get(pk=jar_id)
-                            
+                                
                             product_name = selected_jar.product.name_product
                             jar_size = selected_jar.size
-                            
+                                
                             # Calculate the total jars needed
                             total_jars_needed = 1 * box_quantity
-                            filled_jars_data.append((product_name, jar_size, total_jars_needed))
-                            
+
+                            if (product_name,jar_size) in jars_dict:
+                                jars_dict[(product_name, jar_size)] += total_jars_needed
+                            else : 
+                                jars_dict[(product_name,jar_size)] = total_jars_needed
+
+                            # filled_jars_data.append((product_name, jar_size, total_jars_needed))
+                           
+                                
                         except (ValueError):
-                            continue            
+                            continue  
+                filled_jars_data = [(key[0], key[1], value) for key, value in jars_dict.items()]
+                print(f" filled jars data : ==> {filled_jars_data}")
+
+
             try: 
                 # Fill the box with the provided data
                 filled_box = FilledBox(box_type=box_type)
@@ -534,7 +557,6 @@ def list_filled_boxes(request):
 def delete_filled_box(request, fill_box_id):
     if not request.user.is_staff:  # Check if the user is staff (i.e., admin)
         return HttpResponseForbidden("You don't have permission to access this page.")
-    
     """
         When we delete the filled box, we will increment the quantity of filled jars 
         back to the FilledJar and also increment the box's quantity.
@@ -894,8 +916,12 @@ def get_jars(request):
     except Box.DoesNotExist:
         return JsonResponse({'error': 'Box type not found'}, status=404)
     box_type_value = box_type_obj.type_box
+
+    if box_type_value in ['coffret 3500']:
+        num_jars=3
+        filled_jars = FilledJar.objects.filter(jar__size__lte=0.25)
     
-    if box_type_value in ['coffret 3500', 'coffret 4000', 'coffret 4500']:
+    elif box_type_value in ['coffret 4000', 'coffret 4500']:
         num_jars = 4
         filled_jars = FilledJar.objects.filter(jar__size__lte=0.25)
     else:
