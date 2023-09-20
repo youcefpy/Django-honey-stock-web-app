@@ -456,9 +456,8 @@ def add_fill_box(request):
             # If a standard is selected, fetch data from BOX_STANDARD
             if selected_standard :
                 box_type_id = request.POST.get('box_type') 
-                box_type = Box.objects.get(pk=box_type_id)
+                box_type_str = BOX_TYPE_MAPPING.get(str(box_type_id))
                 print(f"Received box_type from form: {box_type}")
-                box_type_str = BOX_TYPE_MAPPING.get(box_type)
                 print(f"box_type_str after mapping: {box_type_str}")
                 print(f"selected standard declanched : {selected_standard}")            
                 selected_data = BOX_STANDARD.get(box_type_str, {}).get(selected_standard, [])
@@ -470,14 +469,6 @@ def add_fill_box(request):
                     for size, product_name in selected_data
                 ]
                 print(f"Filled jars Data  : {filled_jars_data}")
-                # Now, let's update the FilledJars
-                for product_name, size, qty in filled_jars_data:
-                    jar = FilledJar.objects.filter(product__name_product=product_name, size=size).first()
-                    if jar:
-                        jar.quantity_field -= qty
-                        jar.save()
-                        # Construct the filled_jars_data list
-                    print(f"filled jars quantity decreased from the filled jars model : {jar.quantity_field}")
             else : 
                 for key, value in request.POST.items():
                     if "Miel" in key:

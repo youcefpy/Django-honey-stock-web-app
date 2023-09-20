@@ -277,7 +277,7 @@ class FilledBox(models.Model):
             filled_jar = FilledJar.objects.filter(jar__size=jar_size, product__name_product=product_name).order_by('filled_date').first()
             
             if not filled_jar:
-                raise ValueError(f"No {product_name} jars of size {jar_size} KG in stock.")
+                raise ValueError(f"Pas '{product_name}' avec bocal {jar_size} KG dans le stock.")
 
             total_jars_needed = int(total_jars_needed)
 
