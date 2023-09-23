@@ -17,7 +17,7 @@ from django.http import HttpResponse
 from openpyxl.styles import Alignment,Font
 from django.http import JsonResponse
 import json
-
+from .integrations.ecomanager import increment_quantity_in_ecomanager
 
 def signup(request):
     if request.method == 'POST':
@@ -196,6 +196,7 @@ def add_filled_jar(request):
                 filled_jar.quantity_field += quantity
                 try:
                     filled_jar.save(update_stock=True)
+                    increment_quantity_in_ecomanager(filled_jar.sku, quantity)
                 except ValueError as e:
                     messages.error(request, str(e))
                     return render(request, 'add_filled_jar.html', {'form': form})
@@ -214,6 +215,8 @@ def add_filled_jar(request):
                 )
                 try:
                     filled_jar.save(update_stock=True)
+                    increment_quantity_in_ecomanager(filled_jar.sku, quantity)
+
                 except ValueError as e:   # Changed IntegrityError to ValueError
                     messages.error(request, str(e))
                     return render(request, 'add_filled_jar.html', {'form': form})
@@ -441,11 +444,13 @@ def delete_box_batch(request, batch_id):
 
 @login_required
 def add_fill_box(request):
+    
     jars_dict ={}
     if request.method == 'POST':
         form = FilledBoxForm(request.POST)
         if form.is_valid():   
-            print(request.POST)        
+            print(request.POST)   
+            sku_for_filled_box = form.cleaned_data['sku_code']  
             # Extract required data
             box_type = form.cleaned_data['box_type']
             box_quantity = int(form.cleaned_data['quantity_fill_box'])
@@ -501,6 +506,9 @@ def add_fill_box(request):
                 # Fill the box with the provided data
                 filled_box = FilledBox(box_type=box_type)
                 filled_box.fill(filled_jars_data, box_quantity)
+
+                # Update the quantity in eco_manager system using the SKU
+                increment_quantity_in_ecomanager(sku_for_filled_box, box_quantity)
             except ValueError as e:
                 messages.error(request, str(e))
                 return redirect('add_fill_box')
