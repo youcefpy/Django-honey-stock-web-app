@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}LISTE DES PRODUITS{% endblock %}
+
+{% block content %}
+    
+    <h1>LIST DES PRODUIT </h1>
+    <div class='mb-3'>
+        <a href="{% url 'export_products_to_excel' %}" class="btn btn-success">Excel</a>
+    </div>
+    <table class='table table-bordered'>
+        <thead>
+            <tr>
+                <th>Nom Produit</th>
+                <th>Quantiter de stock en (kg)</th>
+                <th>Prix/KG</th>
+                <th>Historique des Achat</th>
+                <th>Supprimer le produit</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+            <tr>
+                <td>{{ product.name_product }}</td>
+                <td>{{ product.quantity_in_the_stock  }}</td>
+                <td>{{ product.weighted_average_price |floatformat:2 }} DA</td>
+                <td>
+                    <ul class="scrollable-list">
+                    {% for batch in product.productbatch_set.all %}
+                        <li class='d-flex' style='gap:10px; margin-bottom:10px'>
+                            Date: {{ batch.date_received }}, 
+                            Quantiter: {{ batch.quantity_received }}kg, 
+                            Prix: {{ batch.price_per_kg }} DA, 
+                            <form action="{% url 'delete_batch' batch.id %}" method="post" onsubmit= "return confirmDeleteBatch();">
+                                {% csrf_token %}
+                                <button class='btn btn-danger'>Supprimer l'arrivage</button>
+                            </form>
+                            <form method="POST" action="{% url 'update_product_batch' batch.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class='btn btn-primary'>Modifier</button>
+                            </form>
+                        </li>
+                    {% endfor %}    
+                    </ul>
+                </td>
+                <td>
+                    <form action="{% url 'delete_product' product.id %}" method="post" onsubmit="return confirmDelete();">
+                        {% csrf_token %}
+                        <button class='btn btn-danger'>Supprimer le produit</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
+
+
+<script>
+    function confirmDelete() {
+        return confirm("Voulez-vous vraiment supprimer ce produit et ses lots ?");
+    }
+
+</script>
+
+<script>
+    function confirmDeleteBatch() {
+        return confirm("Voulez-vous vraiment supprimer cette arrivage ?");
+    }
+</script>

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+
+{% block title %}LISTE DES COFFRET{% endblock  %}
+
+{% block content %}
+    <h1>Liste Des Coffret</h1>
+    <div class='mb-3'>
+        <a href="{% url 'export_boxes_to_excel' %}" class="btn btn-success">Excel</a>
+
+    </div>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Type de coffret</th>
+                <th>Quantiter dans le Stoque</th>
+                <th>Price</th>
+                <th>Historique des achat/lot</th>
+                <th>Supprimer</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for box in boxs %}
+            <tr>
+                <td>{{ box.get_type_box_display }}</td>
+                <td>{{ box.quantity_in_stock }}</td>
+                <td>{{ box.weighted_average|floatformat:2 }} DA</td>
+                <td>
+                    <ul class='scrollable-list'>
+                    {% for batch in box.boxbatch_set.all %}
+                        <li>
+                            Date: {{ batch.date_entry }},
+                            Quantiter: {{ batch.quantity_received }},
+                            Prix/Coffret: {{ batch.purchase_price }} DA,
+                            <form action="{% url 'delete_box_batch' batch.id %}" method="post" onsubmit="return confirmDeleteBatch();">
+                                {% csrf_token %}
+                                <button class='btn btn-danger'>Supprimer Lot</button>
+                            </form>  
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </td>
+                <td>
+                    <form action="{% url 'delete_box' box.id %}" method="post" onsubmit="return confirmDelete();">
+                        {% csrf_token %}
+                        <button class='btn btn-danger'>Supprimer Coffret</button>
+                    </form> 
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
+
+
+
+<script>
+    function confirmDelete() {
+        return confirm("Do you really want to delete this jar and its batches?");
+    }
+    function confirmDeleteBatch() {
+        return confirm("Do you really want to delete this batch?");
+    }
+</script>

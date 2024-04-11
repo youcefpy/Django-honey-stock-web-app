@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Default Title{% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">    
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon">
+
+    <!-- Optional Bootstrap JavaScript and jQuery -->
+    {% comment %} <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script> {% endcomment %}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class='container-fluid'>
+            <nav class="navbar navbar-expand-lg navbar-light bg-light">
+                <div class="container-fluid">
+                  <a class="navbar-brand" href="{% url 'main' %}"><img src="{% static 'images/asil_logo.jpg' %}" width="70px" /></a>
+                  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarScroll" aria-controls="navbarScroll" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                  </button>
+                  <div class="collapse navbar-collapse" id="navbarScroll">
+                    <ul class="navbar-nav me-auto my-2 my-lg-0 navbar-nav-scroll" style="--bs-scroll-height: 100px;">
+                      <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="{% url 'main' %}">ACCEUIL</a>
+                      </li>
+                      {% comment %} LIEN POUR LES MIEL  {% endcomment %}
+                      <li class="dropdown">
+                        <a class="nav-link dropdown-toggle" dropdown-toggle href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          MIEL
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
+                          <li><a class="dropdown-item" href="{% url 'add_honey_product' %}">AJOUTER UN NOUVEAU MIEL</a></li>
+                          <li><a class="dropdown-item" href="{% url 'add_product_batch' %}">AJOUTER UN STOCK</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="{% url 'list_products' %}">LIST DES MIEL</a></li>
+                        </ul>
+                      </li> 
+                      {% comment %} LIEN POUR LES MIEL  {% endcomment %}
+
+                     {% comment %} LIEN POUR LES POTS  {% endcomment %}
+
+                     <li class="dropdown">
+                        <a class="nav-link dropdown-toggle" dropdown-toggle href="#" id="dropdownMenuLink" role="button" data-toggle="dropdown" aria-expanded="false">
+                          BOCAL
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
+                          <li><a class="dropdown-item" href="{% url 'add_jar' %}">AJOUTER UN NOUVEAU BOCAL</a></li>
+                          <li><a class="dropdown-item" href="{% url 'jars_batch' %}">AJOUTER UN STOCK DES BOCALS</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="{% url 'list_jars' %}">LIST DES BOCALES VIERGES</a></li>
+                        </ul>
+                      </li>
+
+                     {% comment %} LIEN POUR LES POTS  {% endcomment %}
+
+                    {% comment %} LIEN POUR LES ETTIQUETTE  {% endcomment %}
+
+                    <li class="dropdown">
+                      <a class="nav-link dropdown-toggle" dropdown-toggle href="#" id="dropdownMenuLink" role="button" data-toggle="dropdown" aria-expanded="false">
+                            ETIQUETE
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
+                          <li><a class="dropdown-item" href="{% url 'add_ticket' %}">AJOUTER UNE ETIQUETE</a></li>
+                          <li><a class="dropdown-item" href="{% url 'add_batch_ticket' %}">AJOUTER UN STOCK DES ETIQUETES</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="{% url 'list_tickets' %}">LIST DES ETIQUETES</a></li>
+                        </ul>
+                      </li>
+
+                     {% comment %} LIEN POUR LES ETTIQUETTE  {% endcomment %}
+                      <li class="nav-item">
+                        <a class="nav-link " aria-current="page" href="{% url 'add_sku' %}">Ajouter SKU</a>
+                      </li>
+
+                    {% comment %} LIEN POUR LES BOCALES REMPLI PAR LE MIEL  {% endcomment %}
+
+                    <li class="dropdown">
+                      <a class="nav-link dropdown-toggle" dropdown-toggle href="#" id="dropdownMenuLink" role="button" data-toggle="dropdown" aria-expanded="false">
+                            BOCAL REMPLI
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
+                          <li><a class="dropdown-item" href="{% url 'add_filled_jar' %}">AJOUTER BOCAL REMPLI</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="{% url 'list_filled_jars' %}">LIST DES BOCALES REMPLIS</a></li>
+                        </ul>
+                      </li>
+
+                    {% comment %} LIEN POUR LES BOCALES REMPLI PAR LE MIEL  {% endcomment %}
+
+                    {% comment %} LIEN POUR LES BOCALES REMPLI PAR LE MIEL  {% endcomment %}
+
+                    <li class="dropdown">
+                      <a class="nav-link dropdown-toggle" dropdown-toggle href="#" id="dropdownMenuLink" role="button" data-toggle="dropdown" aria-expanded="false">
+                            COFFRET
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
+                          <li><a class="dropdown-item" href="{% url 'add_box' %}">AJOUTER UN COFFERT</a></li>
+                          <li><a class="dropdown-item" href="{% url 'add_box_batch' %}">AJOUTER UN STOCK DES COFFERTS</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="{% url 'list_box' %}">LIST DES COFFRETS</a></li>
+                        </ul>
+                      </li>
+
+                    {% comment %} LIEN POUR LES BOCALES REMPLI PAR LE MIEL  {% endcomment %}
+
+                    {% comment %} LIEN POUR LES BOCALES REMPLI PAR LE MIEL  {% endcomment %}
+
+                    <li class="dropdown">
+                      <a class="nav-link dropdown-toggle" dropdown-toggle href="#" id="dropdownMenuLink" role="button" data-toggle="dropdown" aria-expanded="false">
+                             COFFERT REMPLI
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
+                          <li><a class="dropdown-item" href="{% url 'add_fill_box' %}">AJOUTER UN STOCK DES COFFERTS REMPLI</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="{% url 'list_filled_boxes' %}" >LIST DES COFFRETS REMPLI</a></li>
+                        </ul>
+                      </li>
+
+                    {% comment %} LIEN POUR La Vente  {% endcomment %}
+
+                    <li class="dropdown">
+                      <a class="nav-link dropdown-toggle" dropdown-toggle href="#" id="dropdownMenuLink" role="button" data-toggle="dropdown" aria-expanded="false">
+                             VENTE
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarScrollingDropdown">
+                          <li><a class="dropdown-item" href="{% url 'add_sell_filled_jars' %}">EFFECTUER UNE VENTE BOCAL</a></li>
+                          <li><a class="dropdown-item" href="{% url 'add_sell_fill_box' %}">EFFECTUER UNE VENTE COFFERT</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><a class="dropdown-item" href="{% url 'list_sell_jars' %}">LIST DES MIEL (POTS/CHAHDA) VENDU</a></li>
+                          <li><a class="dropdown-item" href="{% url 'list_sell_boxes' %}">LIST DES COFFRETS VENDU</a></li>
+                        </ul>
+                    </li>
+
+                    {% comment %} LIEN POUR La Vente {% endcomment %}
+                    </ul>
+                  </div>
+                </div>
+                {% if user.is_authenticated and current_page != 'signup' %}
+                  <a href="{% url 'logout' %}" class='btn btn-danger'>Logout</a>
+                {% endif %}
+              </nav>
+        </div>
+    </header>
+    
+    <main>
+        <div class='container mt-5'>
+            {% block content %}
+              <style>
+                .scrollable-list {
+                    height: 100px;  /* or any desired fixed height */
+                    overflow-y: auto;
+                    border: 1px solid #ccc; /* optional: for visual clarity */
+                    padding: 5px;
+                  }
+              </style>
+            
+            {% endblock %}
+        </div>
+    </main>
+
+    <footer>
+        <!-- Add footer content here -->
+    </footer>
+</body>
+</html>

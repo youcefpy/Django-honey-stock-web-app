@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}LIST DES ETTIQUETE{% endblock %}
+
+{% block content %}
+
+    <h1>Liste des Etiquette</h1>
+    <div class='mb-3'>
+        <a href='{% url "export_tickets_excel" %}' class='btn btn-success'>Excel</a>
+    </div>
+    <table class='table table-bordered'>
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Nom Produit</th>
+                <th>Quantiter Dans Le Stock</th>
+                <th>Prix</th>
+                <th>Historique d'achat</th>
+                <th>Supprimer Etiquette</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket in tickets %}
+            <tr>
+                <td>{{ ticket.get_type_ticket_display }}</td>
+                <td>{{ ticket.product.name_product }}</td>
+                <td>{{ ticket.quantity_in_the_stock  }}</td>
+                <td>{{ ticket.weighted_average|floatformat:2 }}</td>
+                <td>
+                    <ul class='scrollable-list'>
+                    {% for batch in ticket.ticketbatch_set.all %}
+                        <li>
+                            Date: {{ batch.date_received }},
+                            Quantiter: {{ batch.quantity_received }},
+                            Prix/Etiquette: {{ batch.purchase_price }},
+                            <form action="{% url 'delete_ticket_batch' batch.id %}" method="post" onsubmit="return confirmDeleteBatch();">
+                                {% csrf_token %}
+                                <button class='btn btn-danger'>Supprimer</button>
+                            </form>     
+                        </li>
+                    {% endfor %}
+                    </ul>
+                </td>
+                <td>
+                    <form action="{% url 'delete_ticket' ticket.id %}" method="post" onsubmit="return confirmDelete();">
+                        {% csrf_token %}
+                        <button class='btn btn-danger'>Supprimer Etiquette</button>
+                    </form> 
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
+
+
+<script>
+    function confirmDelete() {
+        return confirm("Do you really want to delete this ticket and its batches?");
+    }
+    function confirmDeleteBatch() {
+        return confirm("Do you really want to delete this batch?");
+    }
+</script>

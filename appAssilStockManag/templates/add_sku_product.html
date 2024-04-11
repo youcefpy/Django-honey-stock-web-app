@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+{% block title %} AJOUTER SKU PRODUCT {% endblock %}
+
+{% block content %}
+  <h2>AJOUTER SKU PRODUCT</h2>
+
+  <form method="post" class='needs-validation' novalidate>
+
+    {% csrf_token %}
+    {% for field in form  %}
+      <div class='form-group'>
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field|add_class:"form-control" }}
+
+        <div class="invalid-feedback">
+          {{ field.errors|striptags }}
+        </div>
+      </div>
+    
+    {% endfor %}
+    <button type="submit" class='btn btn-success'>Validé</button>
+  </form>
+
+{% endblock %}

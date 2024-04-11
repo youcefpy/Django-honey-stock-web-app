@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+
+{% block title %}LISTE DES COFFRET REMPLI{% endblock  %}
+
+ {% block content %}
+{% comment %} 
+<h1>LISTE DES COFFRET REMPLI</h1>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Box Type</th>
+            <th>Jars Inside</th>
+            <th>Quantity</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for box in filled_boxes %}
+        <tr>
+            <td>{{ box.box_type.type_box }}</td>
+            <td>   
+                {% for jar_relation in box.filledboxjars_set.all %}
+                    {{ jar_relation.jar.product.name_product }} ({{ jar_relation.jar.jar.size }}KG) x {{ jar_relation.quantity }}
+                {% empty %}
+                    No jars inside.
+                {% endfor %}
+             </td>
+             
+            <td>{{ box.quantity_fill_box }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>  {% endcomment %}
+
+
+
+<h1 style='margin-top:1rem'>LISTE DES COFFRET REMPLI apres regroupemet par des bocal </h1>
+<div class='mb-3'>
+    <a href="{% url 'export_filled_boxes_excel' %}" class="btn btn-success">Excel</a>
+
+</div>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Type Coffret</th>
+            <th>Bocal Dans Coffret</th>
+            <th>Quantiter</th>
+            <th>Modifier</th>
+            <th>Supprimer</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for box in result %}
+            <tr>
+                <td>{{ box.box_type }}</td>
+                <td>{{ box.jars_inside }}</td>
+                <td>{{ box.quantity }}</td>
+                <td>
+                    {% if box.box_id %}
+                        <a href="#" class="btn btn-primary">Modifier</a>
+                    {% endif %}
+                </td>                
+                <td>
+                    {% if box.box_id %}
+                        <form action="{% url 'delete_filled_box' box.box_id %}" method="post" onsubmit="return confirmDelete();">
+                            {% csrf_token %}
+                            <button class='btn btn-danger'>Supprimer</button>
+                        </form>  
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+<script>
+    function confirmDelete() {
+        return confirm("Voulez-vous vraiment supprimer les coffret rempli ?");
+    }
+</script>
+
+
+
+{% endblock %}
+
